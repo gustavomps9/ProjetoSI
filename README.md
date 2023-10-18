@@ -7,8 +7,10 @@ autorização e na máquina autorizada.
 
 ## Elementos do Grupo:
 Gustavo Silva
+
 Reuel Queiroz
 
 ## Desenvolvido com:
 IntelliJ IDEA
+
 Java
