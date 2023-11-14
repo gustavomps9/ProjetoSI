@@ -33,12 +33,12 @@ public class Licenca {
 
     public Date getDataDeValidade() {
         // Implementar a lógica para obter a data de validade da licença
-        return new Date(); // Substitua isso pela lógica real
+        return new Date();
     }
 
     public boolean isRegistered() throws Exception {
         // Implementar a lógica para verificar se a licença é válida
-        return true; // Substitua isso pela lógica real
+        return true;
     }
 
     public boolean startRegistration(KeyPair keyPair) throws Exception {
@@ -72,7 +72,7 @@ public class Licenca {
         cipher.init(Cipher.DECRYPT_MODE, new SecretKeySpec("chave-simetrica".getBytes(), "AES"));
         byte[] dadosDecifrados = cipher.doFinal(dadosDaLicenca);
 
-        // Verifica a assinatura digital dos dados decifrados usando a chave pública
+        // Verifica a assinatura digital dos dados decifrados com o auxílio da chave pública
         Signature assinatura = Signature.getInstance("SHA256withRSA");
         assinatura.initVerify(keyPair.getPublic());
         assinatura.update(dadosDecifrados);
@@ -86,20 +86,19 @@ public class Licenca {
     }
 
     public static void main(String[] args) throws Exception {
-        // Exemplo de uso
         KeyPair keyPair = generateKeyPair();
         Licenca licenca = new Licenca("MinhaApp", "1.0", "DadosDaLicenca".getBytes());
 
         licenca.startRegistration(keyPair);
 
-        // Exiba informações da licença
+        // Exibir informações da licença
         licenca.showLicenseInfo();
 
-        // Valide a licença
+        // Validaçao da licença
         if (licenca.validateLicense(keyPair)) {
             System.out.println("Licença válida.");
         } else {
-            System.out.println("Licença inválida.");
+            System.out.println("Licença inválida."); // Quando não é válida aparece esta mensagem
         }
     }
 }
