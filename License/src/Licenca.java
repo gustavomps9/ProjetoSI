@@ -67,7 +67,7 @@ public class Licenca {
     }
 
     public boolean validateLicense(KeyPair keyPair) throws Exception {
-        // Decifra os dados da licença com o auxilio da chave simétrica
+        // Decifra os dados da licença com o auxilio da chave simetrica
         Cipher cipher = Cipher.getInstance("AES");
         cipher.init(Cipher.DECRYPT_MODE, new SecretKeySpec("chave-simetrica".getBytes(), "AES"));
         byte[] dadosDecifrados = cipher.doFinal(dadosDaLicenca);
