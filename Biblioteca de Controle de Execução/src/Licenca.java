@@ -95,10 +95,7 @@ public class Licenca {
         licenca.showLicenseInfo();
 
         // Validaçao da licença
-        if (licenca.validateLicense(keyPair)) {
-            System.out.println("Licença válida.");
-        } else {
-            System.out.println("Licença inválida."); // Quando não é válida aparece esta mensagem
-        }
+        if (licenca.validateLicense(keyPair)) {System.out.println("Licença válida.");
+        } else {System.out.println("Licença inválida."); /*Quando não é válida aparece esta mensagem*/}
     }
 }
