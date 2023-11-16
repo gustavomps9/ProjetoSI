@@ -72,17 +72,62 @@ public class Licenca {
         cipher.init(Cipher.DECRYPT_MODE, new SecretKeySpec("chave-simetrica".getBytes(), "AES"));
         byte[] dadosDecifrados = cipher.doFinal(dadosDaLicenca);
 
+
+        // é verificado o intervalo temporal da licença
+        if (!isValidTimeFrame(dadosDecifrados)) {
+            return false;
+        }
+
         // Verifica a assinatura digital dos dados decifrados com o auxílio da chave pública
         Signature assinatura = Signature.getInstance("SHA256withRSA");
         assinatura.initVerify(keyPair.getPublic());
         assinatura.update(dadosDecifrados);
+
         return assinatura.verify(assinaturaDigital);
+
+        } catch (NoSuchAlgorithmException | NoSuchPaddingException | InvalidKeyException |
+            BadPaddingException | IllegalBlockSizeException | SignatureException e) {
+            e.printStackTrace(); // Necessário tratar as exceções para o nosso código (nosuchalgorithmexception em prinpicipio)
+            return false;
+        }
     }
 
-    public static KeyPair generateKeyPair() throws NoSuchAlgorithmException {
-        KeyPairGenerator keyPairGenerator = KeyPairGenerator.getInstance("RSA");
-        keyPairGenerator.initialize(2048);
-        return keyPairGenerator.generateKeyPair();
+        private boolean isValidTimeFrame(byte[] dadosDecifrados) {
+        // Falta implementar  a lógica para verificar o intervalo temporal com base nos dados decifrados
+        // e a data atual do sistema.
+        // Exemplo: dadosDecifrados contém informações de data de expiração da licença.
+
+        // substituir a lógica abaixo com a implementação específica do seu caso
+        Date dataAtual = new Date();
+        Date dataExpiracao = obterDataExpiracao(dadosDecifrados);
+        return dataAtual.before(dataExpiracao);
+
+
+
+        private Date obterDataExpiracao(byte[] dadosDecifrados) {
+            // implementar a lógica para extrair a data de expiração dos dados decifrados.
+            // Substitua isso com a implementação específica do seu caso.
+            SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd");
+            try {
+                String dataExpiracaoStr = /* extrair a data de expiração dos dados */;
+                return dateFormat.parse(dataExpiracaoStr);
+            } catch (ParseException e) {
+                e.printStackTrace(); // tratar a exceção de forma apropriada.
+                return null;
+            }
+        }
+    }
+
+
+    public static KeyPair generateKeyPair() {
+        // Implemente a lógica para gerar e retornar um par de chaves.
+        try {
+            KeyPairGenerator keyPairGenerator = KeyPairGenerator.getInstance("RSA");
+            keyPairGenerator.initialize(2048);
+            return keyPairGenerator.generateKeyPair();
+        } catch (NoSuchAlgorithmException e) {
+            e.printStackTrace(); // Trate a exceção de forma apropriada para o seu caso.
+            return null;
     }
 
     public static void main(String[] args) throws Exception {
@@ -91,10 +136,10 @@ public class Licenca {
 
         licenca.startRegistration(keyPair);
 
-        // Exibir informações da licença
+        // exibir informações da licença
         licenca.showLicenseInfo();
 
-        // Validaçao da licença
+        // validaçao da licença
         if (licenca.validateLicense(keyPair)) {System.out.println("Licença válida.");
         } else {System.out.println("Licença inválida."); /*Quando não é válida aparece esta mensagem*/}
     }
