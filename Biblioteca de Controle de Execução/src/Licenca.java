@@ -3,7 +3,10 @@ import javax.crypto.KeyGenerator;
 import javax.crypto.SecretKey;
 import javax.crypto.spec.SecretKeySpec;
 import java.security.*;
+import java.security.spec.InvalidKeySpecException;
 import java.security.spec.X509EncodedKeySpec;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
 import java.util.Base64;
 import java.util.Date;
 
@@ -41,7 +44,7 @@ public class Licenca {
 
         // Decifra os dados da licença com o auxílio da chave simétrica
         Cipher cipher = Cipher.getInstance("AES");
-        cipher.init(Cipher.DECRYPT_MODE, new SecretKeySpec(chaveSimetrica.getEncoded(), "AES"));
+        //cipher.init(Cipher.DECRYPT_MODE, new SecretKeySpec(chaveSimetrica.getEncoded(), "AES"));
         byte[] dadosDecifrados = cipher.doFinal(dadosDaLicenca);
 
         // Verifica a assinatura digital dos dados decifrados com o auxílio da chave pública
@@ -117,13 +120,13 @@ public class Licenca {
         Cipher cipher = Cipher.getInstance("AES");
         cipher.init(Cipher.DECRYPT_MODE, new SecretKeySpec("chave-simetrica".getBytes(), "AES"));
         byte[] dadosDecifrados = cipher.doFinal(dadosDaLicenca);
-
+/*
 
         // é verificado o intervalo temporal da licença
         if (!isValidTimeFrame(dadosDecifrados)) {
             return false;
         }
-
+*/
         // Verifica a assinatura digital dos dados decifrados com o auxílio da chave pública
         Signature assinatura = Signature.getInstance("SHA256withRSA");
         assinatura.initVerify(keyPair.getPublic());
@@ -131,11 +134,8 @@ public class Licenca {
 
         return assinatura.verify(assinaturaDigital);
 
-        } catch (NoSuchAlgorithmException) {
-            e.printStackTrace();
-            return false;
-        }
     }
+}
     /*
         private boolean isValidTimeFrame(byte[] dadosDecifrados) {
     try {
@@ -178,7 +178,7 @@ private Date obterDataExpiracao(byte[] dadosDecifrados) {
     }
 }
 
-     */
+
 
 
 
@@ -192,19 +192,21 @@ private Date obterDataExpiracao(byte[] dadosDecifrados) {
         Date dataExpiracao = obterDataExpiracao(dadosDecifrados);
         return dataAtual.before(dataExpiracao);
 
-
-
-        private Date obterDataExpiracao(byte[] dadosDecifrados) {
+     private Date obterDataExpiracao(byte[] dadosDecifrados) {
             // Substitua isso com a implementação específica do seu caso.
             SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd");
             try {
-                String dataExpiracaoStr = /* extrair a data de expiração dos dados */;
+                String dataExpiracaoStr = /* extrair a data de expiração dos dados */;/*
                 return dateFormat.parse(dataExpiracaoStr);
-            } catch (ParseException e) {
-                e.printStackTrace(); // tratar a exceção de forma apropriada.
-                return null;
-            }
-        }
+                        } catch (ParseException e) {
+                        e.printStackTrace(); // tratar a exceção de forma apropriada.
+                        return null;
+                        }
+                        }*/
+
+
+
+
 
            /* try {
                 // Suponhamos que os dados decifrados contêm uma string representando a data de expiração.
@@ -225,7 +227,7 @@ private Date obterDataExpiracao(byte[] dadosDecifrados) {
                 e.printStackTrace(); // Trate a exceção de forma apropriada para o seu caso.
                 return null;
             }
-        }*/
+        }*//*
     }
 
 
@@ -239,7 +241,8 @@ private Date obterDataExpiracao(byte[] dadosDecifrados) {
             e.printStackTrace(); // Trate a exceção de forma apropriada para o seu caso.
             return null;
     }
-
+*/
+/*
     public static void main(String[] args) throws Exception {
         KeyPair keyPair = generateKeyPair();
         Licenca licenca = new Licenca("MinhaApp", "1.0", "DadosDaLicenca".getBytes());
@@ -251,6 +254,5 @@ private Date obterDataExpiracao(byte[] dadosDecifrados) {
 
         // validaçao da licença
         if (licenca.validateLicense(keyPair)) {System.out.println("Licença válida.");
-        } else {System.out.println("Licença inválida."); /*Quando não é válida aparece esta mensagem*/}
-    }
-}
+        } else {System.out.println("Licença inválida."); Quando não é válida aparece esta mensagem}
+    }*/

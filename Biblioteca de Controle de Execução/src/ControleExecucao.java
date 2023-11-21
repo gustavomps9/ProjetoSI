@@ -3,92 +3,97 @@ import javax.crypto.KeyGenerator;
 import javax.crypto.SecretKey;
 import java.io.FileOutputStream;
 import java.nio.charset.StandardCharsets;
-import java.security.KeyPair;
-import java.security.KeyPairGenerator;
-import java.security.Signature;
+import java.security.*;
 import java.util.Base64;
+import java.util.Objects;
+import java.util.Scanner;
 
 public class ControleExecucao {
     public Aplicacao app;
 
-    public ControleExecucao(String nome, String versao) {
+    public ControleExecucao(String nome, String versao) throws Exception {
         this.app = new Aplicacao(nome, versao);
+        isRegistered();
     }
 
-    /**
-     * É invocado no início da execução da aplicação ou sempre que necessário.
-     * Valida a correta execução da aplicação.
-     * @return
-     */
-    public boolean isRegistered(){
-        Boolean estaValidado;
+    private boolean isRegistered() throws Exception {
+        Scanner scanner1 = new Scanner(System.in);
+        Scanner scanner2 = new Scanner(System.in);
 
-        /*
-        se a aplicação não estiver validada return false;
-        se a aplicação estiver validada return true;
-        */
+        if(procuraLicensa()){
+            do{
+                System.out.println("Deseja ver as informações da licensa existente ? [S/n]");
 
-        return true;
+                if (Objects.equals(scanner1.next(), "S")) {
+                    showLicenseInfo();
+                    break;
+                } else if (Objects.equals(scanner1.next(), "n")) {
+                    break;
+                }
+            } while(!Objects.equals(scanner1.next(), "S") || !Objects.equals(scanner1.next(), "n"));
+        }else{
+            do{
+                System.out.println("Deseja pedir um novo registro ? [S/n]");
+
+                if (Objects.equals(scanner2.next(), "S")) {
+                    startRegistration();
+                } else if (Objects.equals(scanner2.next(), "n")) {
+                    return false;
+                }
+            } while(!Objects.equals(scanner2.next(), "S") || !Objects.equals(scanner2.next(), "n"));
+        }
+        return false;
     }
 
-    /**
-     * Apresenta uma interface que indica que a aplicação não se encontra registada e possibilita a iniciação do processo de registo de uma nova licença
-     * @return
-     */
     public boolean startRegistration() throws Exception {
         Utilizador utilizador = new Utilizador();
         Sistema sistema = new Sistema();
-
         String dadosDocumento = utilizador.toString() + sistema.toString() + this.app.toString();
 
-        // assinatura com chave do cartão de cidadão do documento
-        String assinatura = assinaturaCartaoCidadao(dadosDocumento);
+        byte[] assinatura = assinaturaCartaoCidadao(dadosDocumento);
 
-        // cifra do documento
-        String dadosCifrados = cifraDocumento(dadosDocumento + assinatura);
+        byte[] dadosCifrados = cifraDocumento(assinatura);
 
-        // criação do ficheiro "pedido de registo" codificado para Base 64
-        String dadosCodificados = Base64.getEncoder().encodeToString(dadosCifrados.getBytes(StandardCharsets.UTF_8));
+        String dadosCodificados = Base64.getEncoder().encodeToString(dadosCifrados);
 
-        // armazenamento no ficheiro
         try (FileOutputStream fos = new FileOutputStream("PedidoDeRegisto")) {
             fos.write(dadosCodificados.getBytes(StandardCharsets.UTF_8));
-        } catch (Exception e) {e.printStackTrace();}
-
-        // deve mostrar no ecrã
-
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
         return true;
     }
 
-    /**
-     * Apresenta os dados da licença atual
-     */
-    public void showLicenseInfo(){}
-
-    private String assinaturaCartaoCidadao(String dadosDocumento) throws Exception {
-        Signature signature = Signature.getInstance("SHA256withRSA");
-        signature.initSign(generateKeyPair().getPrivate());
-        signature.update(dadosDocumento.getBytes(StandardCharsets.UTF_8));
-        byte[] assinatura = signature.sign();
-        return Base64.getEncoder().encodeToString(assinatura);
+    public void showLicenseInfo() {
     }
 
-    private String cifraDocumento(String dados) throws Exception {
+    private Boolean procuraLicensa() {
+        return true;
+    }
+
+    private byte[] assinaturaCartaoCidadao(String dadosDocumento) throws Exception {
+        Provider[] provs = Security.getProviders();
+
+        KeyStore ks = KeyStore.getInstance("PKCS11", provs[13]);
+        ks.load(null, null);
+
+        PrivateKey privateKey = (PrivateKey) ks.getKey("CITIZEN SIGNATURE CERTIFICATE", null);
+
+        Signature signature = Signature.getInstance("SHA256withRSA");
+        signature.initSign(privateKey);
+        signature.update(dadosDocumento.getBytes());
+        return signature.sign();
+    }
+
+    private byte[] cifraDocumento(byte[] dados) throws Exception {
         Cipher cipher = Cipher.getInstance("AES");
         cipher.init(Cipher.ENCRYPT_MODE, generateSessionKey());
-        byte[] dadosCifrados = cipher.doFinal(dados.getBytes(StandardCharsets.UTF_8));
-        return Base64.getEncoder().encodeToString(dadosCifrados);
-    }
-
-    private KeyPair generateKeyPair() throws Exception {
-        KeyPairGenerator keyPairGenerator = KeyPairGenerator.getInstance("RSA");
-        keyPairGenerator.initialize(2048); // Você pode ajustar o tamanho da chave conforme necessário
-        return keyPairGenerator.generateKeyPair();
+        return cipher.doFinal(dados);
     }
 
     private SecretKey generateSessionKey() throws Exception {
         KeyGenerator keyGenerator = KeyGenerator.getInstance("AES");
-        keyGenerator.init(256); // Você pode ajustar o tamanho da chave conforme necessário
+        keyGenerator.init(256);
         return keyGenerator.generateKey();
     }
 }
