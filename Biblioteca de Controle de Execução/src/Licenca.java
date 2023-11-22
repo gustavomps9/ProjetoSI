@@ -39,12 +39,84 @@ public class Licenca {
         return new Date();
     }
 
-    public boolean isRegistered(KeyPair keyPair) throws Exception {
-        // Implementar a lógica para verificar se a licença é válida
+    public void saveKeyPair(KeyPair keyPair, String alias) {
+        // Armazenamento do par de chaves no KeyStore
+        GestorDeLicenca.saveKeyPair(keyPair, alias, keystorePassword);
+    }
 
+    public KeyPair loadKeyPair(String alias) {
+        // Carregamento do par de chaves do KeyStore
+        return GestorDeLicenca.loadKeyPair(alias, keystorePassword);
+    }
+
+    public byte[] calculateHash(byte[] data) {
+        // Cálculo do hash SHA-256
+        return GestorDeLicenca.calculateHash(data);
+    }
+
+    public KeyPair generateKeyPair() {
+        // Geração de um par de chaves RSA
+        return GestorDeLicenca.generateKeyPair();
+    }
+
+    public SecretKey generateSymmetricKey() {
+        // Geração de uma chave simétrica AES
+        return GestorDeLicenca.generateSymmetricKey();
+    }
+
+
+    private String getUserIdentifier() {
+        // Lógica para obter o identificador do utilizador (pode ser um número de série, nome, etc.)
+        Scanner scanner = new Scanner(System.in);
+        System.out.println("Digite o identificador do utilizador:");
+        return scanner.nextLine();
+    }
+
+    private SecretKey generateSymmetricKey() throws NoSuchAlgorithmException {
+        // Implemente a lógica para gerar e retornar uma chave simétrica.
+        KeyGenerator keyGenerator = KeyGenerator.getInstance("AES");
+        keyGenerator.init(256);
+        return keyGenerator.generateKey();
+    }
+
+    private Date obterDataExpiracao(byte[] dadosDecifrados) {
+        try {
+            String dadosComoString = new String(dadosDecifrados, "UTF-8");
+            int indiceInicio = dadosComoString.indexOf("Data de Expiracao:") + "Data de Expiracao:".length();
+            int indiceFim = dadosComoString.indexOf(",", indiceInicio);
+            String dataExpiracaoStr = dadosComoString.substring(indiceInicio, indiceFim).trim();
+
+            SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd");
+            return dateFormat.parse(dataExpiracaoStr);
+        } catch (UnsupportedEncodingException | ParseException e) {
+            e.printStackTrace();
+            return null;
+        }
+    }
+
+    private boolean isValidTimeFrame(byte[] dadosDecifrados) {
+        try {
+            Date dataExpiracao = obterDataExpiracao(dadosDecifrados);
+
+            // Verifique se a data de expiração está definida e se é posterior à data atual
+            if (dataExpiracao != null) {
+                Date dataAtual = new Date();
+                return dataAtual.before(dataExpiracao);
+            } else {
+                // Se a data de expiração não puder ser obtida, considere a licença como inválida
+                return false;
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+            return false;
+        }
+    }
+    public boolean isRegistered(KeyPair keyPair) throws Exception {
         // Decifra os dados da licença com o auxílio da chave simétrica
         Cipher cipher = Cipher.getInstance("AES");
-        //cipher.init(Cipher.DECRYPT_MODE, new SecretKeySpec(chaveSimetrica.getEncoded(), "AES"));
+        // substituir pela chave simétrica real
+        SecretKey chaveSimetrica = generateSymmetricKey();
+        cipher.init(Cipher.DECRYPT_MODE, chaveSimetrica);
         byte[] dadosDecifrados = cipher.doFinal(dadosDaLicenca);
 
         // Verifica a assinatura digital dos dados decifrados com o auxílio da chave pública
@@ -52,12 +124,23 @@ public class Licenca {
         assinatura.initVerify(keyPair.getPublic());
         assinatura.update(dadosDecifrados);
 
-        return assinatura.verify(assinaturaDigital);
+        return assinatura.verify(assinaturaDigital) && isValidTimeFrame(dadosDecifrados);
     }
 
     public boolean startRegistration(KeyPair keyPair) throws Exception {
+        String identificadorDoSistema = getIdentificadorDoSistema();
+        String identificadorDoUtilizador = getIdentificadorDoUtilizador();
+        Date dataDeValidade = getDataDeValidade();
+
+        // Construção dos dados da licença
+        String dadosLicencaString = "Identificador do Sistema: " + identificadorDoSistema +
+                ", Identificador do Utilizador: " + identificadorDoUtilizador +
+                ", Data de Expiracao: " + new SimpleDateFormat("yyyy-MM-dd").format(dataDeValidade);
+
+        byte[] dadosDaLicenca = dadosLicencaString.getBytes("UTF-8");
+
         // Criação de chave simétrica para cifrar os dados da licença
-        SecretKey chaveSimetrica = KeyGenerator.getInstance("AES").generateKey();
+        SecretKey chaveSimetrica = generateSymmetricKey();
 
         // Cifra os dados da licença com a chave simétrica
         Cipher cipher = Cipher.getInstance("AES");
@@ -81,6 +164,15 @@ public class Licenca {
         }
 
         return true;
+    }
+
+    public static KeyPair loadKeyPair(String fileName) {
+        try (ObjectInputStream ois = new ObjectInputStream(new FileInputStream(fileName))) {
+            return (KeyPair) ois.readObject();
+        } catch (IOException e) {
+            e.printStackTrace();
+            return null;
+        }
     }
 
 
@@ -120,115 +212,15 @@ public class Licenca {
         Cipher cipher = Cipher.getInstance("AES");
         cipher.init(Cipher.DECRYPT_MODE, new SecretKeySpec("chave-simetrica".getBytes(), "AES"));
         byte[] dadosDecifrados = cipher.doFinal(dadosDaLicenca);
-/*
 
-        // é verificado o intervalo temporal da licença
-        if (!isValidTimeFrame(dadosDecifrados)) {
-            return false;
-        }
-*/
         // Verifica a assinatura digital dos dados decifrados com o auxílio da chave pública
         Signature assinatura = Signature.getInstance("SHA256withRSA");
         assinatura.initVerify(keyPair.getPublic());
         assinatura.update(dadosDecifrados);
 
         return assinatura.verify(assinaturaDigital);
-
     }
 }
-    /*
-        private boolean isValidTimeFrame(byte[] dadosDecifrados) {
-    try {
-        // Obtenha a data de expiração a partir dos dados decifrados
-        Date dataExpiracao = obterDataExpiracao(dadosDecifrados);
-
-        // Verifique se a data de expiração está definida e se é posterior à data atual
-        if (dataExpiracao != null) {
-            Date dataAtual = new Date();
-            return dataAtual.before(dataExpiracao);
-        } else {
-            // Se a data de expiração não puder ser obtida, considere a licença como inválida
-            return false;
-        }
-
-    } catch (Exception e) {
-        e.printStackTrace(); // Trate a exceção de forma apropriada para o seu caso.
-        return false;
-    }
-}
-
-private Date obterDataExpiracao(byte[] dadosDecifrados) {
-    try {
-        // A implementação exata depende da estrutura dos dados decifrados.
-        // Supondo que os dados contenham uma string representando a data de expiração
-        String dadosComoString = new String(dadosDecifrados, "UTF-8");
-
-        // A forma exata de extração dependerá da estrutura real dos dados.
-        int indiceInicio = dadosComoString.indexOf("Data de Expiracao:") + "Data de Expiracao:".length();
-        int indiceFim = dadosComoString.indexOf(",", indiceInicio);
-
-        String dataExpiracaoStr = dadosComoString.substring(indiceInicio, indiceFim).trim();
-
-        // Converta a string para um objeto Date
-        return dateFormat.parse(dataExpiracaoStr);
-
-    } catch (UnsupportedEncodingException | ParseException e) {
-        e.printStackTrace(); // Trate a exceção de forma apropriada para o seu caso.
-        return null;
-    }
-}
-
-
-
-
-
-        private boolean isValidTimeFrame(byte[] dadosDecifrados) {
-        // Falta implementar  a lógica para verificar o intervalo temporal com base nos dados decifrados
-        // e a data atual do sistema.
-        // Exemplo: dadosDecifrados contém informações de data de expiração da licença.
-
-        // substituir a lógica abaixo com a implementação específica do seu caso
-        Date dataAtual = new Date();
-        Date dataExpiracao = obterDataExpiracao(dadosDecifrados);
-        return dataAtual.before(dataExpiracao);
-
-     private Date obterDataExpiracao(byte[] dadosDecifrados) {
-            // Substitua isso com a implementação específica do seu caso.
-            SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd");
-            try {
-                String dataExpiracaoStr = /* extrair a data de expiração dos dados */;/*
-                return dateFormat.parse(dataExpiracaoStr);
-                        } catch (ParseException e) {
-                        e.printStackTrace(); // tratar a exceção de forma apropriada.
-                        return null;
-                        }
-                        }*/
-
-
-
-
-
-           /* try {
-                // Suponhamos que os dados decifrados contêm uma string representando a data de expiração.
-                // A forma exata de extração dependerá da estrutura real dos dados.
-
-                String dadosComoString = new String(dadosDecifrados, "UTF-8");
-
-                // Aqui, estamos usando um índice de exemplo para extrair a substring que representa a data de expiração.
-                int indiceInicio = dadosComoString.indexOf("Data de Expiracao:") + "Data de Expiracao:".length();
-                int indiceFim = dadosComoString.indexOf(",", indiceInicio);
-
-                String dataExpiracaoStr = dadosComoString.substring(indiceInicio, indiceFim).trim();
-
-                // Converta a string para um objeto Date
-                return dateFormat.parse(dataExpiracaoStr);
-
-            } catch (UnsupportedEncodingException | ParseException e) {
-                e.printStackTrace(); // Trate a exceção de forma apropriada para o seu caso.
-                return null;
-            }
-        }*//*
-    }
 
 
     public static KeyPair generateKeyPair() {
@@ -238,10 +230,10 @@ private Date obterDataExpiracao(byte[] dadosDecifrados) {
             keyPairGenerator.initialize(2048);
             return keyPairGenerator.generateKeyPair();
         } catch (NoSuchAlgorithmException e) {
-            e.printStackTrace(); // Trate a exceção de forma apropriada para o seu caso.
+            e.printStackTrace();
             return null;
     }
-*/
+
 /*
     public static void main(String[] args) throws Exception {
         KeyPair keyPair = generateKeyPair();

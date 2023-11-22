@@ -1,11 +1,6 @@
-import javax.crypto.Cipher;
-import javax.crypto.KeyGenerator;
-import javax.crypto.SecretKey;
 import java.io.FileOutputStream;
 import java.nio.charset.StandardCharsets;
-import java.security.*;
 import java.util.Base64;
-import java.util.Objects;
 import java.util.Scanner;
 
 public class ControleExecucao {
@@ -17,59 +12,81 @@ public class ControleExecucao {
     }
 
     private boolean isRegistered() throws Exception {
-        Scanner scanner1 = new Scanner(System.in);
-        Scanner scanner2 = new Scanner(System.in);
+        Scanner scanner = new Scanner(System.in);
 
-        if(procuraLicensa()){
-            do{
-                System.out.println("Deseja ver as informações da licensa existente ? [S/n]");
+        if (procuraLicenca()) {
+            do {
+                System.out.println("Deseja ver as informações da licença existente? [S/n]");
+                String resposta = scanner.next();
 
-                if (Objects.equals(scanner1.next(), "S")) {
-                    showLicenseInfo();
-                    break;
-                } else if (Objects.equals(scanner1.next(), "n")) {
-                    break;
+                if ("S".equalsIgnoreCase(resposta)) {
+                    app.showLicenseInfo();  // Chama o método showLicenseInfo da classe Aplicacao
+                    return true;
+                } else if ("n".equalsIgnoreCase(resposta)) {
+                    return true;
                 }
-            } while(!Objects.equals(scanner1.next(), "S") || !Objects.equals(scanner1.next(), "n"));
-        }else{
-            do{
-                System.out.println("Deseja pedir um novo registro ? [S/n]");
 
-                if (Objects.equals(scanner2.next(), "S")) {
+                System.out.println("Resposta inválida. Por favor, digite 'S' para sim ou 'n' para não.");
+
+            } while (true);
+        } else {
+            do {
+                System.out.println("Deseja pedir um novo registo? [S/n]");
+                String resposta = scanner.next();
+
+                if ("S".equalsIgnoreCase(resposta)) {
                     startRegistration();
-                } else if (Objects.equals(scanner2.next(), "n")) {
+                    return false;
+                } else if ("n".equalsIgnoreCase(resposta)) {
                     return false;
                 }
-            } while(!Objects.equals(scanner2.next(), "S") || !Objects.equals(scanner2.next(), "n"));
+
+                System.out.println("Resposta inválida. Por favor, digite 'S' para sim ou 'n' para não.");
+
+            } while (true);
         }
-        return false;
     }
 
+    // Método para iniciar o registro conforme as instruções do enunciado
     public boolean startRegistration() throws Exception {
-        Utilizador utilizador = new Utilizador();
-        Sistema sistema = new Sistema();
-        String dadosDocumento = utilizador.toString() + sistema.toString() + this.app.toString();
+        // Gera informações necessárias para a licença
+        String identificadorDoSistema = app.getIdentificadorDoSistema();
+        String identificadorDoUtilizador = app.getIdentificadorDoUtilizador();
+        Date dataDeValidade = app.getDataDeValidade();
 
-        byte[] assinatura = assinaturaCartaoCidadao(dadosDocumento);
+        // Construção dos dados da licença
+        String dadosLicencaString = "Identificador do Sistema: " + identificadorDoSistema +
+                ", Identificador do Utilizador: " + identificadorDoUtilizador +
+                ", Data de Expiracao: " + new SimpleDateFormat("yyyy-MM-dd").format(dataDeValidade);
 
-        byte[] dadosCifrados = cifraDocumento(assinatura);
+        byte[] dadosDaLicenca = dadosLicencaString.getBytes(StandardCharsets.UTF_8);
 
+        // Criação de chave simétrica para cifrar os dados da licença
+        SecretKey chaveSimetrica = app.generateSymmetricKey();
+
+        // Cifra os dados da licença com a chave simétrica
+        byte[] dadosCifrados = app.cifraDocumento(dadosDaLicenca, chaveSimetrica);
+
+        // Codifica os dados cifrados em Base64
         String dadosCodificados = Base64.getEncoder().encodeToString(dadosCifrados);
 
+        // Armazenamento dos dados cifrados no arquivo "PedidoDeRegisto"
         try (FileOutputStream fos = new FileOutputStream("PedidoDeRegisto")) {
             fos.write(dadosCodificados.getBytes(StandardCharsets.UTF_8));
         } catch (Exception e) {
             e.printStackTrace();
+            return false;
         }
+
         return true;
     }
 
-    public void showLicenseInfo() {
+    private Boolean procuraLicenca() {
+        // Lógica para procurar a licença. Este método precisa ser implementado.
+        // Retorne true se a licença existir, false caso contrário.
+        return false;
     }
 
-    private Boolean procuraLicensa() {
-        return true;
-    }
 
     private byte[] assinaturaCartaoCidadao(String dadosDocumento) throws Exception {
         Provider[] provs = Security.getProviders();
@@ -88,6 +105,12 @@ public class ControleExecucao {
     private byte[] cifraDocumento(byte[] dados) throws Exception {
         Cipher cipher = Cipher.getInstance("AES");
         cipher.init(Cipher.ENCRYPT_MODE, generateSessionKey());
+        return cipher.doFinal(dados);
+    }
+
+    private byte[] decifraDocumento(byte[] dados SecretKey chaveDocumento) throws Exception {
+        Cipher cipher = Cipher.getInstance("AES");
+        cipher.init(Cipher.DECRYPT_MODE, chaveDocumento);
         return cipher.doFinal(dados);
     }
 

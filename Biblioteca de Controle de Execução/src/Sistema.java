@@ -29,11 +29,15 @@ public class Sistema {
                 byte[] mac = networkInterface.getHardwareAddress();
                 if (mac != null) {
                     StringBuilder macAddress = new StringBuilder();
-                    for (int i = 0; i < mac.length; i++) {macAddress.append(String.format("%02X%s", mac[i], (i < mac.length - 1) ? "-" : ""));}
+                    for (int i = 0; i < mac.length; i++) {
+                        macAddress.append(String.format("%02X%s", mac[i], (i < mac.length - 1) ? "-" : ""));
+                    }
                     macAddresses.add(macAddress.toString());
                 }
             }
-        } catch (SocketException e) {e.printStackTrace();}
+        } catch (SocketException e) {
+            e.printStackTrace();
+        }
         return macAddresses;
     }
 
@@ -52,21 +56,34 @@ public class Sistema {
         try {
             String osName = System.getProperty("os.name").toLowerCase();
             if (osName.contains("win")) {
-                Process process = Runtime.getRuntime().exec("cmd /c vol " + root);
-                try (java.util.Scanner scanner = new java.util.Scanner(process.getInputStream()).useDelimiter("\\A")) {return scanner.hasNext() ? scanner.next().trim() : "N/A";}
-            } else {return "N/A";}
-        } catch (Exception e) {e.printStackTrace();return "N/A";}
+                ProcessBuilder processBuilder = new ProcessBuilder("cmd", "/c", "vol", root.toString());
+                Process process = processBuilder.start();
+
+                try (java.util.Scanner scanner = new java.util.Scanner(process.getInputStream()).useDelimiter("\\A")) {
+                    return scanner.hasNext() ? scanner.next().trim() : "N/A";
+                }
+            } else {
+                return "N/A";
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+            return "N/A";
+        }
     }
 
     @Override
     public String toString() {
-        StringJoiner joiner = new StringJoiner("\n");
-        joiner.add("Número de CPUs: " + numCpus);
-        joiner.add("Tipo de CPUs: " + tipoCpus);
-        joiner.add("Endereços MAC:");
-        for (String macAddress : macAddresses) {joiner.add("  " + macAddress);}
-        joiner.add("Números de Série dos Volumes:");
-        for (String volumeSerialNumber : volumeSerialNumbers) {joiner.add("  " + volumeSerialNumber);}
-        return joiner.toString();
+        StringBuilder result = new StringBuilder();
+        result.append("Número de CPUs: ").append(numCpus).append("\n");
+        result.append("Tipo de CPUs: ").append(tipoCpus).append("\n");
+        result.append("Endereços MAC:\n");
+        for (String macAddress : macAddresses) {
+            result.append("  ").append(macAddress).append("\n");
+        }
+        result.append("Números de Série dos Volumes:\n");
+        for (String volumeSerialNumber : volumeSerialNumbers) {
+            result.append("  ").append(volumeSerialNumber).append("\n");
+        }
+        return result.toString();
     }
 }
