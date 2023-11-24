@@ -12,74 +12,46 @@ import java.util.Date;
 
 public class Licenca {
 
-    private String nomeDaApp;
-    private String versao;
-    private byte[] dadosDaLicenca;
-    private byte[] assinaturaDigital;
-
-    public Licenca(String nomeDaApp, String versao, byte[] dadosDaLicenca) {
-        this.nomeDaApp = nomeDaApp;
-        this.versao = versao;
-        this.dadosDaLicenca = dadosDaLicenca;
-    }
-
-
-    public String getIdentificadorDoSistema() {
-        // Implementar a lógica para obter o identificador do sistema
-        return "IdentificadorDoSistema";
-    }
-
-    public String getIdentificadorDoUtilizador() {
-        // Implementar a lógica para obter o identificador do utilizador
-        return "IdentificadorDoUtilizador";
-    }
-
-    public Date getDataDeValidade() {
-        // Implementar a lógica para obter a data de validade da licença
-        return new Date();
-    }
-
-    public void saveKeyPair(KeyPair keyPair, String alias) {
+    /* public void saveKeyPair(KeyPair keyPair, String alias) {
         // Armazenamento do par de chaves no KeyStore
         GestorDeLicenca.saveKeyPair(keyPair, alias, keystorePassword);
-    }
+    }*/
 
-    public KeyPair loadKeyPair(String alias) {
+    /*public KeyPair loadKeyPair(String alias) {
         // Carregamento do par de chaves do KeyStore
         return GestorDeLicenca.loadKeyPair(alias, keystorePassword);
-    }
+    }*/
 
-    public byte[] calculateHash(byte[] data) {
+    /*public byte[] calculateHash(byte[] data) {
         // Cálculo do hash SHA-256
         return GestorDeLicenca.calculateHash(data);
-    }
+    }*/
 
-    public KeyPair generateKeyPair() {
+    /*public KeyPair generateKeyPair() {
         // Geração de um par de chaves RSA
         return GestorDeLicenca.generateKeyPair();
-    }
+    }*/
 
-    public SecretKey generateSymmetricKey() {
+    /*public SecretKey generateSymmetricKey() {
         // Geração de uma chave simétrica AES
         return GestorDeLicenca.generateSymmetricKey();
-    }
+    }*/
 
-
-    private String getUserIdentifier() {
+    /*private String getUserIdentifier() {
         // Lógica para obter o identificador do utilizador (pode ser um número de série, nome, etc.)
         Scanner scanner = new Scanner(System.in);
         System.out.println("Digite o identificador do utilizador:");
         return scanner.nextLine();
-    }
+    }*/
 
-    private SecretKey generateSymmetricKey() throws NoSuchAlgorithmException {
+    /*private SecretKey generateSymmetricKey() throws NoSuchAlgorithmException {
         // Implemente a lógica para gerar e retornar uma chave simétrica.
         KeyGenerator keyGenerator = KeyGenerator.getInstance("AES");
         keyGenerator.init(256);
         return keyGenerator.generateKey();
-    }
+    }*/
 
-    private Date obterDataExpiracao(byte[] dadosDecifrados) {
+    /*private Date obterDataExpiracao(byte[] dadosDecifrados) {
         try {
             String dadosComoString = new String(dadosDecifrados, "UTF-8");
             int indiceInicio = dadosComoString.indexOf("Data de Expiracao:") + "Data de Expiracao:".length();
@@ -92,9 +64,9 @@ public class Licenca {
             e.printStackTrace();
             return null;
         }
-    }
+    }*/
 
-    private boolean isValidTimeFrame(byte[] dadosDecifrados) {
+    /*private boolean isValidTimeFrame(byte[] dadosDecifrados) {
         try {
             Date dataExpiracao = obterDataExpiracao(dadosDecifrados);
 
@@ -110,8 +82,9 @@ public class Licenca {
             e.printStackTrace();
             return false;
         }
-    }
-    public boolean isRegistered(KeyPair keyPair) throws Exception {
+    }*/
+
+    /*public boolean isRegistered(KeyPair keyPair) throws Exception {
         // Decifra os dados da licença com o auxílio da chave simétrica
         Cipher cipher = Cipher.getInstance("AES");
         // substituir pela chave simétrica real
@@ -125,9 +98,9 @@ public class Licenca {
         assinatura.update(dadosDecifrados);
 
         return assinatura.verify(assinaturaDigital) && isValidTimeFrame(dadosDecifrados);
-    }
+    }*/
 
-    public boolean startRegistration(KeyPair keyPair) throws Exception {
+    /*public boolean startRegistration(KeyPair keyPair) throws Exception {
         String identificadorDoSistema = getIdentificadorDoSistema();
         String identificadorDoUtilizador = getIdentificadorDoUtilizador();
         Date dataDeValidade = getDataDeValidade();
@@ -164,17 +137,16 @@ public class Licenca {
         }
 
         return true;
-    }
+    }*/
 
-    public static KeyPair loadKeyPair(String fileName) {
+    /*public static KeyPair loadKeyPair(String fileName) {
         try (ObjectInputStream ois = new ObjectInputStream(new FileInputStream(fileName))) {
             return (KeyPair) ois.readObject();
         } catch (IOException e) {
             e.printStackTrace();
             return null;
         }
-    }
-
+    }*/
 
     private PublicKey getPublicKeyFromIdentifier(String identifier) throws NoSuchAlgorithmException, InvalidKeySpecException {
         // Implementar a lógica para obter a chave pública do utilizador a partir do identificador
@@ -190,24 +162,7 @@ public class Licenca {
         return keyFactory.generatePublic(chaveSpec);
     }
 
-    private boolean authenticateUser(PublicKey chavePublicaUtilizador) throws Exception {
-        // Implementar a lógica para autenticar o utilizador com a chave pública
-        // Aqui, vamos simular uma autenticação bem-sucedida. Substitua isso pela lógica real.
-        return true;
-    }
-
-
-    public void showLicenseInfo() {
-        // Implementar a lógica para exibir as informações da licença
-        System.out.println("Informações da Licença:");
-        System.out.println("Nome da Aplicação: " + nomeDaApp);
-        System.out.println("Versão: " + versao);
-        System.out.println("Identificador do Sistema: " + getIdentificadorDoSistema());
-        System.out.println("Identificador do Utilizador: " + getIdentificadorDoUtilizador());
-        System.out.println("Data de Validade: " + getDataDeValidade());
-    }
-
-    public boolean validateLicense(KeyPair keyPair) throws Exception {
+    /*public boolean validateLicense(KeyPair keyPair) throws Exception {
         // Decifra os dados da licença com o auxilio da chave simetrica
         Cipher cipher = Cipher.getInstance("AES");
         cipher.init(Cipher.DECRYPT_MODE, new SecretKeySpec("chave-simetrica".getBytes(), "AES"));
@@ -219,32 +174,5 @@ public class Licenca {
         assinatura.update(dadosDecifrados);
 
         return assinatura.verify(assinaturaDigital);
-    }
-}
-
-
-    public static KeyPair generateKeyPair() {
-        // Implemente a lógica para gerar e retornar um par de chaves.
-        try {
-            KeyPairGenerator keyPairGenerator = KeyPairGenerator.getInstance("RSA");
-            keyPairGenerator.initialize(2048);
-            return keyPairGenerator.generateKeyPair();
-        } catch (NoSuchAlgorithmException e) {
-            e.printStackTrace();
-            return null;
-    }
-
-/*
-    public static void main(String[] args) throws Exception {
-        KeyPair keyPair = generateKeyPair();
-        Licenca licenca = new Licenca("MinhaApp", "1.0", "DadosDaLicenca".getBytes());
-
-        licenca.startRegistration(keyPair);
-
-        // exibir informações da licença
-        licenca.showLicenseInfo();
-
-        // validaçao da licença
-        if (licenca.validateLicense(keyPair)) {System.out.println("Licença válida.");
-        } else {System.out.println("Licença inválida."); Quando não é válida aparece esta mensagem}
     }*/
+}
