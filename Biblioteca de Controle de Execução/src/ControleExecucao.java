@@ -1,6 +1,7 @@
 import javax.crypto.Cipher;
 import javax.crypto.KeyGenerator;
 import javax.crypto.SecretKey;
+import java.io.File;
 import java.nio.charset.StandardCharsets;
 import java.util.Base64;
 import java.util.Objects;
@@ -10,6 +11,7 @@ import java.security.*;
 
 public class ControleExecucao {
     public Aplicacao app;
+    public File file;
 
     public ControleExecucao(String nome, String versao) throws Exception {
         this.app = new Aplicacao(nome, versao);
@@ -26,10 +28,9 @@ public class ControleExecucao {
 
                 if (Objects.equals(scanner1.next(), "S")) {
                     showLicenseInfo();
-                    break;
-                } else if (Objects.equals(scanner1.next(), "n")) {
-                    break;
-                }
+                    return true;
+                } else if (Objects.equals(scanner1.next(), "n")) {return true;}
+
             } while(!Objects.equals(scanner1.next(), "S") || !Objects.equals(scanner1.next(), "n"));
         }else{
             do{
@@ -37,35 +38,53 @@ public class ControleExecucao {
 
                 if (Objects.equals(scanner2.next(), "S")) {
                     startRegistration();
-                } else if (Objects.equals(scanner2.next(), "n")) {
-                    return false;
-                }
+                } else if (Objects.equals(scanner2.next(), "n")) {return false;}
+
             } while(!Objects.equals(scanner2.next(), "S") || !Objects.equals(scanner2.next(), "n"));
         }
         return false;
     }
 
     public boolean startRegistration() throws Exception {
-        Utilizador utilizador = new Utilizador();
         Sistema sistema = new Sistema();
+        Utilizador utilizador = new Utilizador();
 
         String dadosDocumento = utilizador.toString() + sistema.toString() + this.app.toString();
+
         byte[] assinatura = assinaturaCartaoCidadao(dadosDocumento);
+
         byte[] dadosCifrados = cifraDocumento(assinatura);
+
         String dadosCodificados = Base64.getEncoder().encodeToString(dadosCifrados);
 
         try (FileOutputStream fos = new FileOutputStream("PedidoDeRegisto")) {
             fos.write(dadosCodificados.getBytes(StandardCharsets.UTF_8));
-        } catch (Exception e) {
-        e.printStackTrace();
-    }
+        } catch (Exception e) {e.printStackTrace();}
+
         return true;
     }
 
-    public void showLicenseInfo() {}
+    public void showLicenseInfo() {
+        System.out.println(this.file.toString());
+    }
 
     private Boolean procuraLicensa() {
-        return true;
+        File diretorioAtual = new File("../Aplicação/licensa");
+
+        if (diretorioAtual.exists() && diretorioAtual.isDirectory()) {
+            File[] arquivos = diretorioAtual.listFiles();
+
+            if (arquivos != null && arquivos.length > 0) {
+                for (File arquivo : arquivos) {
+                    if (arquivo.isFile()) {
+                        this.file = arquivo;
+                        return true;
+                    }
+                }
+            }else {return false;}
+        } else{return false;}
+
+        return false;
     }
 
     private byte[] assinaturaCartaoCidadao(String dadosDocumento) throws Exception {

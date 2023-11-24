@@ -22,14 +22,6 @@ public class Utilizador {
         this.certificadoChavePublica = scanner.nextLine();
     }
 
-    public String getNome() {return nome;}
-
-    public String getEmail() {return email;}
-
-    public int getNumIdentificacaoCivil() {return numIdentificacaoCivil;}
-
-    public String getCertificadoChavePublica() {return certificadoChavePublica;}
-
     @Override
     public String toString() {
         return "Nome:'" + nome + '\'' + ", Email:'" + email + '\'' +
