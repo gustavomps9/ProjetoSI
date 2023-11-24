@@ -77,13 +77,9 @@ public class Sistema {
         result.append("Número de CPUs: ").append(numCpus).append("\n");
         result.append("Tipo de CPUs: ").append(tipoCpus).append("\n");
         result.append("Endereços MAC:\n");
-        for (String macAddress : macAddresses) {
-            result.append("  ").append(macAddress).append("\n");
-        }
+        for (String macAddress : macAddresses) {result.append("  ").append(macAddress).append("\n");}
         result.append("Números de Série dos Volumes:\n");
-        for (String volumeSerialNumber : volumeSerialNumbers) {
-            result.append("  ").append(volumeSerialNumber).append("\n");
-        }
+        for (String volumeSerialNumber : volumeSerialNumbers) {result.append("  ").append(volumeSerialNumber).append("\n");}
         return result.toString();
     }
 }

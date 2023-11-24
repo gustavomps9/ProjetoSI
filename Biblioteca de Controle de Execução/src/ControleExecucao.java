@@ -1,6 +1,7 @@
 import javax.crypto.Cipher;
 import javax.crypto.KeyGenerator;
 import javax.crypto.SecretKey;
+import javax.swing.*;
 import java.io.File;
 import java.nio.charset.StandardCharsets;
 import java.util.Base64;
@@ -13,8 +14,8 @@ public class ControleExecucao {
     public Aplicacao app;
     public File file;
 
-    public ControleExecucao(String nome, String versao) throws Exception {
-        this.app = new Aplicacao(nome, versao);
+    public ControleExecucao(String nomeDaApp, String versao) throws Exception {
+        this.app = new Aplicacao(nomeDaApp, versao);
         isRegistered();
     }
 
@@ -57,11 +58,7 @@ public class ControleExecucao {
 
         String dadosCodificados = Base64.getEncoder().encodeToString(dadosCifrados);
 
-        try (FileOutputStream fos = new FileOutputStream("PedidoDeRegisto")) {
-            fos.write(dadosCodificados.getBytes(StandardCharsets.UTF_8));
-        } catch (Exception e) {e.printStackTrace();}
-
-        return true;
+        return descarregaPedido(dadosCodificados);
     }
 
     public void showLicenseInfo() {
@@ -70,6 +67,8 @@ public class ControleExecucao {
 
     private Boolean procuraLicensa() {
         File diretorioAtual = new File("../Aplicação/licensa");
+
+        //desassociar busca a aplicação em causa...
 
         if (diretorioAtual.exists() && diretorioAtual.isDirectory()) {
             File[] arquivos = diretorioAtual.listFiles();
@@ -89,6 +88,8 @@ public class ControleExecucao {
 
     private byte[] assinaturaCartaoCidadao(String dadosDocumento) throws Exception {
         Provider[] provs = Security.getProviders();
+
+        //automatizar obtenção do provider...
 
         KeyStore ks = KeyStore.getInstance("PKCS11", provs[13]);
         ks.load(null, null);
@@ -111,6 +112,28 @@ public class ControleExecucao {
         KeyGenerator keyGenerator = KeyGenerator.getInstance("AES");
         keyGenerator.init(256);
         return keyGenerator.generateKey();
+    }
+
+    private Boolean descarregaPedido(String dadosCodificados){
+        JFileChooser fileChooser = new JFileChooser();
+        fileChooser.setDialogTitle("Salvar Como");
+
+        int userSelection = fileChooser.showSaveDialog(null);
+
+        if (userSelection == JFileChooser.APPROVE_OPTION) {
+            try (FileOutputStream fos = new FileOutputStream(fileChooser.getSelectedFile())) {
+                fos.write(dadosCodificados.getBytes(StandardCharsets.UTF_8));
+                JOptionPane.showMessageDialog(null, "Download concluído com sucesso!");
+                return true;
+            } catch (Exception e) {
+                e.printStackTrace();
+                JOptionPane.showMessageDialog(null, "Erro durante o download: " + e.getMessage());
+                return false;
+            }
+        } else {
+            System.out.println("Download cancelado pelo usuário.");
+            return false;
+        }
     }
 
 }

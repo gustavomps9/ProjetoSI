@@ -5,7 +5,7 @@ import java.io.IOException;
 import java.io.ObjectOutputStream;
 import java.security.KeyPair;
 
-public class GestorDeLicenca {
+public class GestorDeLicencaOld {
     public static void main(String[] args) {
         // Gera um par de chaves para o autor/distribuidor
         KeyPair keyPair = generateKeyPair();
