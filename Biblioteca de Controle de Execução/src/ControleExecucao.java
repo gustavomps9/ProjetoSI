@@ -1,8 +1,7 @@
 import javax.crypto.Cipher;
 import javax.crypto.KeyGenerator;
-import javax.crypto.SecretKey;
-import javax.swing.*;
 import java.io.File;
+import java.io.ObjectOutputStream;
 import java.nio.charset.StandardCharsets;
 import java.util.Base64;
 import java.util.Objects;
@@ -50,15 +49,19 @@ public class ControleExecucao {
         Sistema sistema = new Sistema();
         Utilizador utilizador = new Utilizador();
 
-        String dadosDocumento = utilizador.toString() + sistema.toString() + this.app.toString();
+        String conteudo = utilizador.toString() + sistema.toString() + this.app.toString();
+
+        String dadosDocumento = Base64.getEncoder().encodeToString(conteudo.getBytes(StandardCharsets.UTF_8));
 
         byte[] assinatura = assinaturaCartaoCidadao(dadosDocumento);
 
-        byte[] dadosCifrados = cifraDocumento(assinatura);
+        byte[] dadosCifrados = cifraDocumento(dadosDocumento);
 
-        String dadosCodificados = Base64.getEncoder().encodeToString(dadosCifrados);
-
-        return descarregaPedido(dadosCodificados);
+        try (ObjectOutputStream outputStream = new ObjectOutputStream(new FileOutputStream("pedido_de_registro"))) {
+            outputStream.writeObject(dadosCifrados);
+            outputStream.writeObject(assinatura);
+            return descarregaPedido(outputStream);
+        }
     }
 
     public void showLicenseInfo() {
@@ -88,10 +91,15 @@ public class ControleExecucao {
 
     private byte[] assinaturaCartaoCidadao(String dadosDocumento) throws Exception {
         Provider[] provs = Security.getProviders();
+        Provider provider = null;
 
-        //automatizar obtenção do provider...
+        for (Provider prov : provs) {
+            if (prov.getName().equals("SunPKCS11-CartaoCidadao")) {
+                provider = prov;
+            }
+        }
 
-        KeyStore ks = KeyStore.getInstance("PKCS11", provs[13]);
+        KeyStore ks = KeyStore.getInstance("PKCS11", provider);
         ks.load(null, null);
 
         PrivateKey privateKey = (PrivateKey) ks.getKey("CITIZEN SIGNATURE CERTIFICATE", null);
@@ -102,38 +110,16 @@ public class ControleExecucao {
         return signature.sign();
     }
 
-    private byte[] cifraDocumento(byte[] dados) throws Exception {
-        Cipher cipher = Cipher.getInstance("AES");
-        cipher.init(Cipher.ENCRYPT_MODE, generateSessionKey());
-        return cipher.doFinal(dados);
-    }
-
-    private SecretKey generateSessionKey() throws Exception {
+    private byte[] cifraDocumento(String dados) throws Exception {
         KeyGenerator keyGenerator = KeyGenerator.getInstance("AES");
         keyGenerator.init(256);
-        return keyGenerator.generateKey();
+
+        Cipher cipher = Cipher.getInstance("AES");
+        cipher.init(Cipher.ENCRYPT_MODE, keyGenerator.generateKey());
+        return cipher.doFinal(dados.getBytes());
     }
 
-    private Boolean descarregaPedido(String dadosCodificados){
-        JFileChooser fileChooser = new JFileChooser();
-        fileChooser.setDialogTitle("Salvar Como");
-
-        int userSelection = fileChooser.showSaveDialog(null);
-
-        if (userSelection == JFileChooser.APPROVE_OPTION) {
-            try (FileOutputStream fos = new FileOutputStream(fileChooser.getSelectedFile())) {
-                fos.write(dadosCodificados.getBytes(StandardCharsets.UTF_8));
-                JOptionPane.showMessageDialog(null, "Download concluído com sucesso!");
-                return true;
-            } catch (Exception e) {
-                e.printStackTrace();
-                JOptionPane.showMessageDialog(null, "Erro durante o download: " + e.getMessage());
-                return false;
-            }
-        } else {
-            System.out.println("Download cancelado pelo usuário.");
-            return false;
-        }
+    private Boolean descarregaPedido(ObjectOutputStream dadosCodificados){
+        return true;
     }
-
 }
