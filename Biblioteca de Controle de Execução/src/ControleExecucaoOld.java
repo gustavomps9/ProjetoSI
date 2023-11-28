@@ -93,11 +93,7 @@ public class ControleExecucaoOld {
         Provider[] provs = Security.getProviders();
         Provider provider = null;
 
-        for (Provider prov : provs) {
-            if (prov.getName().equals("SunPKCS11-CartaoCidadao")) {
-                provider = prov;
-            }
-        }
+        for (Provider prov : provs) {if (prov.getName().equals("SunPKCS11-CartaoCidadao")) {provider = prov;}}
 
         KeyStore ks = KeyStore.getInstance("PKCS11", provider);
         ks.load(null, null);

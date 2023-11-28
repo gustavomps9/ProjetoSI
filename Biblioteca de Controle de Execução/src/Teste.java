@@ -1,8 +1,14 @@
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.ObjectOutputStream;
+import java.security.*;
+import java.security.cert.Certificate;
+import java.security.cert.CertificateException;
+import java.util.Objects;
+
 public class Teste {
     public static void main(String[] args) {
-        Aplicacao aplicacao = new Aplicacao("Whatsapp", "1.0");
-        Sistema sistema = new Sistema();
-        Utilizador utilizador = new Utilizador();
-        System.out.println(utilizador);
+        ControleExecucao controleExecucao = new ControleExecucao("", "");
+        controleExecucao.startRegistration();
     }
 }
