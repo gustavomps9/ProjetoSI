@@ -9,11 +9,11 @@ import java.util.Scanner;
 import java.io.FileOutputStream;
 import java.security.*;
 
-public class ControleExecucao {
+public class ControleExecucaoOld {
     public Aplicacao app;
     public File file;
 
-    public ControleExecucao(String nomeDaApp, String versao) throws Exception {
+    public ControleExecucaoOld(String nomeDaApp, String versao) throws Exception {
         this.app = new Aplicacao(nomeDaApp, versao);
         isRegistered();
     }

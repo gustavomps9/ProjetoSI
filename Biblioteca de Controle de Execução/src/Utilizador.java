@@ -4,7 +4,6 @@ public class Utilizador {
     private String nome;
     private String email;
     private int numIdentificacaoCivil;
-    private String certificadoChavePublica;
 
     public Utilizador() {
         Scanner scanner = new Scanner(System.in);
@@ -17,15 +16,11 @@ public class Utilizador {
 
         System.out.println("Número de identificação civil: ");
         this.numIdentificacaoCivil = scanner.nextInt();
-
-        System.out.println("Certificado de chave pública do cartão de cidadão: ");
-        this.certificadoChavePublica = scanner.nextLine();
     }
 
     @Override
     public String toString() {
         return "Nome:'" + nome + '\'' + ", Email:'" + email + '\'' +
-                ", Número de Identificação Civil:'" + numIdentificacaoCivil + '\'' +
-                ", Certificado da chave publica do cartão de cidadão:'" + certificadoChavePublica;
+                ", Número de Identificação Civil:'" + numIdentificacaoCivil;
     }
 }
