@@ -1,7 +1,7 @@
 import java.io.*;
 import java.security.*;
-import java.security.cert.Certificate;
 import java.security.cert.CertificateException;
+import java.security.cert.X509Certificate;
 import java.util.Objects;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
@@ -9,6 +9,7 @@ import java.util.zip.ZipOutputStream;
 public class ControleExecucao {
     private final Aplicacao aplicacao;
     private final Sistema sistema;
+    private  Utilizador utilizador;
     private File licensa;
 
     public ControleExecucao(String nomeDaApp, String versao) {
@@ -36,90 +37,64 @@ public class ControleExecucao {
         return false;
     }
 
-    /*
-        - o pedido de licensa é encriptado com uma chave pública e é enviado uma chave privada para o autor para desencriptar o pedido
-        - a assinatura serve para comprovar a integridade e é assinado com uma chave privada e verificado com uma chave pública
-        - as chaves simétricas são criptogradas com chaves assiméticas (híbridas)
-    */
-
-    /*
-        Biblioteca
-        - os dados são assinados com a chave privada do cartão de cidadão e codificados em base64 = ficheiro "dadosAssinados"
-        - o certificado do cartão de cidadão que será utilizado para verificar a assinatura no lado do autor é colocado em outro ficheiro = ficheiro "certificado"
-        - os ficheiros em causa são colocados numa pasta zipada, essa pasta é cifrada SIMÉTRICAMENTE e a sua chave é transmitido ao autor através
-        do mecanismo de chaves híbridas = pasta "PedidoDeLicensa"
-     */
-
-    /*
-        Gestor
-        - o gestor recebe a pasta zipada, e decifra com a chave simétrica que foi transmistida com mecanismos de cifra híbrida
-        - depois de unzipado e decifrado, vai usar o certificado para validar a assinatura do utilizador
-        - após isso tudo validado, na emissão da licensa, o autor vai assinar a licensa e com mecanismos de cifras híbridas vai
-        transmitir a chave pública ao utilizador para que a biblioteca faça a validação da licensa.
-     */
-
     private boolean validaLicensa(File file) {
-        //código a implementar sincronizado com a emissão da licensa
+        //código a implementar sincronizado com a emissão da licensa no gestor
         return true;
     }
 
-    public boolean startRegistration() {
-        Utilizador utilizador = new Utilizador();
-        String dados = utilizador.toString() + sistema.toString() + aplicacao.toString();
+    public boolean startRegistration() throws KeyStoreException {
+        this.utilizador = new Utilizador();
+        String dados = aplicacao.toString() + "\n" + utilizador.toString() + "\n" + sistema.toString();
 
-        try {
-            Certificate cert = getKeyStore().getCertificate("CITIZEN SIGNATURE CERTIFICATE");
-            try (ObjectOutputStream objectOutputStream = new ObjectOutputStream(new FileOutputStream("certificado"))) {
-                objectOutputStream.writeObject(cert);
-            } catch (IOException e) {throw new RuntimeException(e);}
-        } catch (KeyStoreException e) {throw new RuntimeException(e);}
-
-
-        try (FileOutputStream fos = new FileOutputStream("assinatura")) {
-            fos.write(assinaturaDados(dados));
-        } catch (IOException e) {throw new RuntimeException(e);}
-
-        return true;
-    }
-
-    private byte[] assinaturaDados(String dados) {
-        try{
-            PrivateKey privateKey = (PrivateKey) getKeyStore().getKey("CITIZEN SIGNATURE CERTIFICATE", null);
-
-            Signature signature = Signature.getInstance("SHA256withRSA");
-            signature.initSign(privateKey);
-            signature.update(dados.getBytes());
-            return signature.sign();
-        } catch (UnrecoverableKeyException | KeyStoreException | NoSuchAlgorithmException | SignatureException | InvalidKeyException e) {
-            throw new RuntimeException(e);
+        Provider provider = null;
+        for (Provider prov : Security.getProviders()) {
+            if (prov.getName().equals("SunPKCS11-CartaoCidadao")) {
+                provider = prov;
+                break;
+            }
         }
-    }
 
-    private KeyStore getKeyStore(){
+        KeyStore ks = null;
         try {
-            Provider[] provs = Security.getProviders();
-            Provider provider = null;
-            for (Provider prov : provs) {if (prov.getName().equals("SunPKCS11-CartaoCidadao")) {provider = prov;}}
-            KeyStore keyStore = KeyStore.getInstance("PKCS11", Objects.requireNonNull(provider));
-            keyStore.load(null, null);
-            return keyStore;
+            ks = KeyStore.getInstance("PKCS11", Objects.requireNonNull(provider));
+            ks.load(null, null);
         } catch (KeyStoreException | CertificateException | IOException | NoSuchAlgorithmException e) {
             throw new RuntimeException(e);
         }
+
+        X509Certificate certificate = (X509Certificate) ks.getCertificate("CITIZEN SIGNATURE CERTIFICATE");
+
+        createZipFile(assinaDados(ks, dados), certificate.getPublicKey().getEncoded());
+
+        return true;
     }
 
-    public static void descarregaPasta(ObjectOutputStream objectOutputStream, FileOutputStream fileOutputStream) throws IOException {
-        // Cria um novo ZipOutputStream
-        ZipOutputStream zipOutputStream = new ZipOutputStream(fileOutputStream);
-
-        // Adiciona o ObjectOutputStream ao ZipOutputStream
-        ZipEntry zipEntry = new ZipEntry("objectOutputStream.dat");
-        zipOutputStream.putNextEntry(zipEntry);
-
-        // Escreve o ObjectOutputStream para o ZipOutputStream
-        //objectOutputStream.writeTo(zipOutputStream);
-
-        // Fecha o ZipOutputStream
-        zipOutputStream.close();
+    private byte[] assinaDados(KeyStore ks, String dados){
+        Signature signature = null;
+        try {
+            signature = Signature.getInstance("SHA256withRSA");
+            signature.initSign((PrivateKey) ks.getKey("CITIZEN SIGNATURE CERTIFICATE", null));
+            signature.update(dados.getBytes());
+            return signature.sign();
+        } catch (NoSuchAlgorithmException | UnrecoverableKeyException | KeyStoreException | SignatureException | InvalidKeyException e) {
+            throw new RuntimeException(e);
+        }
     }
+
+    private static void createZipFile(byte[] infoLicensa, byte[] certificado) {
+        try (ZipOutputStream zos = new ZipOutputStream(new FileOutputStream("PedidoLicensa"))) {
+            ZipEntry zipEntry1 = new ZipEntry("InfoLicensa");
+            zos.putNextEntry(zipEntry1);
+            zos.write(infoLicensa);
+
+            ZipEntry zipEntry2 = new ZipEntry("Certificado");
+            zos.putNextEntry(zipEntry2);
+            zos.write(certificado);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+
+
 }

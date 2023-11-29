@@ -8,5 +8,5 @@ public class Aplicacao {
     }
 
     @Override
-    public String toString() {return "Nome:'" + nome + '\'' + ", Versão:'" + versao + '\'';}
+    public String toString() {return "{Nome:'" + nome + '\'' + ", Versão:'" + versao + "'}";}
 }

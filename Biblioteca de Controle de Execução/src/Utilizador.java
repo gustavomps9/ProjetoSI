@@ -9,10 +9,10 @@ public class Utilizador {
         Scanner scanner = new Scanner(System.in);
 
         System.out.println("Nome: ");
-        this.nome = scanner.nextLine();
+        this.nome = scanner.next();
 
         System.out.println("Email: ");
-        this.email = scanner.nextLine();
+        this.email = scanner.next();
 
         System.out.println("Número de identificação civil: ");
         this.numIdentificacaoCivil = scanner.nextInt();
@@ -20,7 +20,7 @@ public class Utilizador {
 
     @Override
     public String toString() {
-        return "Nome:'" + nome + '\'' + ", Email:'" + email + '\'' +
-                ", Número de Identificação Civil:'" + numIdentificacaoCivil;
+        return "{Nome:'" + nome + '\'' + ", Email:'" + email + '\'' +
+                ", Número de Identificação Civil:'" + numIdentificacaoCivil + "'}";
     }
 }

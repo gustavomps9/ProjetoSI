@@ -12,45 +12,6 @@ import java.util.Date;
 
 public class Licenca {
 
-    /* public void saveKeyPair(KeyPair keyPair, String alias) {
-        // Armazenamento do par de chaves no KeyStore
-        GestorDeLicenca.saveKeyPair(keyPair, alias, keystorePassword);
-    }*/
-
-    /*public KeyPair loadKeyPair(String alias) {
-        // Carregamento do par de chaves do KeyStore
-        return GestorDeLicenca.loadKeyPair(alias, keystorePassword);
-    }*/
-
-    /*public byte[] calculateHash(byte[] data) {
-        // Cálculo do hash SHA-256
-        return GestorDeLicenca.calculateHash(data);
-    }*/
-
-    /*public KeyPair generateKeyPair() {
-        // Geração de um par de chaves RSA
-        return GestorDeLicenca.generateKeyPair();
-    }*/
-
-    /*public SecretKey generateSymmetricKey() {
-        // Geração de uma chave simétrica AES
-        return GestorDeLicenca.generateSymmetricKey();
-    }*/
-
-    /*private String getUserIdentifier() {
-        // Lógica para obter o identificador do utilizador (pode ser um número de série, nome, etc.)
-        Scanner scanner = new Scanner(System.in);
-        System.out.println("Digite o identificador do utilizador:");
-        return scanner.nextLine();
-    }*/
-
-    /*private SecretKey generateSymmetricKey() throws NoSuchAlgorithmException {
-        // Implemente a lógica para gerar e retornar uma chave simétrica.
-        KeyGenerator keyGenerator = KeyGenerator.getInstance("AES");
-        keyGenerator.init(256);
-        return keyGenerator.generateKey();
-    }*/
-
     /*private Date obterDataExpiracao(byte[] dadosDecifrados) {
         try {
             String dadosComoString = new String(dadosDecifrados, "UTF-8");
@@ -98,54 +59,6 @@ public class Licenca {
         assinatura.update(dadosDecifrados);
 
         return assinatura.verify(assinaturaDigital) && isValidTimeFrame(dadosDecifrados);
-    }*/
-
-    /*public boolean startRegistration(KeyPair keyPair) throws Exception {
-        String identificadorDoSistema = getIdentificadorDoSistema();
-        String identificadorDoUtilizador = getIdentificadorDoUtilizador();
-        Date dataDeValidade = getDataDeValidade();
-
-        // Construção dos dados da licença
-        String dadosLicencaString = "Identificador do Sistema: " + identificadorDoSistema +
-                ", Identificador do Utilizador: " + identificadorDoUtilizador +
-                ", Data de Expiracao: " + new SimpleDateFormat("yyyy-MM-dd").format(dataDeValidade);
-
-        byte[] dadosDaLicenca = dadosLicencaString.getBytes("UTF-8");
-
-        // Criação de chave simétrica para cifrar os dados da licença
-        SecretKey chaveSimetrica = generateSymmetricKey();
-
-        // Cifra os dados da licença com a chave simétrica
-        Cipher cipher = Cipher.getInstance("AES");
-        cipher.init(Cipher.ENCRYPT_MODE, chaveSimetrica);
-        byte[] dadosCifrados = cipher.doFinal(dadosDaLicenca);
-
-        // Criação de uma assinatura digital dos dados cifrados com o auxilio da chave privada
-        Signature assinatura = Signature.getInstance("SHA256withRSA");
-        assinatura.initSign(keyPair.getPrivate());
-        assinatura.update(dadosCifrados);
-        assinaturaDigital = assinatura.sign();
-
-        // Armazenamento dos dados cifrados e da assinatura digital
-        dadosDaLicenca = dadosCifrados;
-
-        PublicKey chavePublicaUtilizador = getPublicKeyFromIdentifier("IdentificadorDoUtilizador");
-
-        // Autentica o utilizador com a chave pública registada na licença
-        if (!authenticateUser(chavePublicaUtilizador)) {
-            throw new Exception("Falha na autenticação do utilizador.");
-        }
-
-        return true;
-    }*/
-
-    /*public static KeyPair loadKeyPair(String fileName) {
-        try (ObjectInputStream ois = new ObjectInputStream(new FileInputStream(fileName))) {
-            return (KeyPair) ois.readObject();
-        } catch (IOException e) {
-            e.printStackTrace();
-            return null;
-        }
     }*/
 
     private PublicKey getPublicKeyFromIdentifier(String identifier) throws NoSuchAlgorithmException, InvalidKeySpecException {
