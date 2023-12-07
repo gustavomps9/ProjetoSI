@@ -15,10 +15,10 @@ public class ControleExecucao {
     public ControleExecucao(String nomeDaApp, String versao) {
         this.aplicacao = new Aplicacao(nomeDaApp, versao);
         this.sistema = new Sistema();
+        isRegistered();
     }
 
-    public ControleExecucao() {
-    }
+    public ControleExecucao() {}
 
     public boolean isRegistered() {
         String userDirectory = System.getProperty("user.dir");
