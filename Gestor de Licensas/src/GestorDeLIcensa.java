@@ -1,78 +1,118 @@
 import javax.crypto.*;
-import javax.swing.*;
-import javax.swing.filechooser.FileNameExtensionFilter;
-import java.io.File;
-import java.io.IOException;
+import javax.crypto.spec.SecretKeySpec;
+import java.io.*;
 import java.security.*;
 import java.security.cert.Certificate;
 import java.security.cert.CertificateException;
-import java.util.Scanner;
+import java.security.cert.CertificateFactory;
+import java.util.Arrays;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipInputStream;
 
 public class GestorDeLIcensa {
-    public File pedidoDeLicensa;
 
-    public GestorDeLIcensa(File pedidoDeLicensa) throws NoSuchPaddingException, IllegalBlockSizeException, CertificateException, IOException, NoSuchAlgorithmException, KeyStoreException, SignatureException, BadPaddingException, InvalidKeyException {
-        System.out.println("Selecione o Pedido de Licensa:");
+    private String infoLicensa;
 
-        this.pedidoDeLicensa = showFileChooser();
-
-        if (pedidoDeLicensa == null) {System.out.println("Não há ficheiro a processar");}
-        else{
-            if (processaPedido()){
-                System.out.println("Pedido validado corretamente");
-                emitirLicensa();
-            } else{System.out.println("Pedido validado incorretamente");}
+    public GestorDeLIcensa(PrivateKey privateKey) throws Exception {
+        if (processarPedido(privateKey)){
+            System.out.println("Pedido processado com sucesso");
+            emitirLicensa();
+        }else{
+            System.out.println("Falha ao processar pedido");
         }
+    }
+
+    private void emitirLicensa() {
 
     }
 
-    private static File showFileChooser() {
-        JFileChooser fileChooser = new JFileChooser();
+    private boolean processarPedido(PrivateKey privateKey) throws Exception {
+        try (ZipInputStream zipInputStream = new ZipInputStream(new FileInputStream("PedidoLicensa.zip"))) {
+            byte[] dadosCifrados = extrairArquivoDoZip(zipInputStream, "InfoLicensa");
+            byte[] chaveSimetricaCifrada = extrairArquivoDoZip(zipInputStream, "chaveSimetricaCifrada");
+            byte[] chaveSimetricaBytes = decifrarChaveSimetrica(chaveSimetricaCifrada, privateKey);
 
-        fileChooser.setFileSelectionMode(JFileChooser.FILES_ONLY);
+            SecretKey chaveSimetrica = new SecretKeySpec(chaveSimetricaBytes, "AES");
+            byte[] dadosAssinados = decifrarDados(dadosCifrados, chaveSimetrica);
 
-        FileNameExtensionFilter filter = new FileNameExtensionFilter("Arquivos de Texto", "txt");
-        fileChooser.setFileFilter(filter);
+            Certificate certificate = extrairCertificadoDoZip(zipInputStream, "Certificado");
 
-        int result = fileChooser.showOpenDialog(null);
-
-        if (result == JFileChooser.APPROVE_OPTION) {return fileChooser.getSelectedFile();}
-
-        return null;
+            if (validaAssinatura(dadosAssinados, certificate)) {
+                this.infoLicensa = Arrays.toString(dadosAssinados);
+                return true;
+            } else {
+                return false;
+            }
+        }
     }
 
-    /**
-     * Método que processa o pedido de registo e retorna true se for bem validado ou false se não
-     */
-    private boolean processaPedido(){
-        //validaAssinatura();
-        return true;
+    private boolean validaAssinatura(byte[] dadosValidar, Certificate certificate) throws NoSuchAlgorithmException, InvalidKeyException, SignatureException {
+        try {
+            Signature signature = Signature.getInstance("SHA256withRSA");
+            signature.initVerify(certificate.getPublicKey());
+            signature.update(dadosValidar);
+            return signature.verify(dadosValidar);
+        } catch (Exception e) {
+            e.printStackTrace();
+            return false;
+        }
     }
 
-    private boolean validaAssinatura(byte dadosValidar) throws KeyStoreException, CertificateException, IOException, NoSuchAlgorithmException, UnrecoverableKeyException, InvalidKeyException, SignatureException {
-        Provider[] provs = Security.getProviders();
-        Provider provider = null;
-        for (Provider prov : provs) {if (prov.getName().equals("SunPKCS11-CartaoCidadao")) {provider = prov;}}
-
-        KeyStore ks = KeyStore.getInstance("PKCS11", provider);
-        ks.load(null, null);
-
-        Certificate certificate = ks.getCertificate("CITIZEN SIGNATURE CERTIFICATE");
-
-        Signature signature = Signature.getInstance("SHA256withRSA");
-        signature.initVerify(certificate.getPublicKey());
-        signature.update(dadosValidar);
-        //return signature.verify(dadosValidar);
-        return true;
+    private Certificate extrairCertificadoDoZip(ZipInputStream zipInputStream, String nomeArquivo) throws IOException, CertificateException {
+        ZipEntry entry;
+        while ((entry = zipInputStream.getNextEntry()) != null) {
+            if (entry.getName().equals(nomeArquivo)) {
+                byte[] certificadoBytes = extrairConteudoDoZip(zipInputStream);
+                CertificateFactory cf = CertificateFactory.getInstance("X.509");
+                ByteArrayInputStream certificadoStream = new ByteArrayInputStream(certificadoBytes);
+                return cf.generateCertificate(certificadoStream);
+            }
+        }
+        throw new IOException("Arquivo não encontrado: " + nomeArquivo);
     }
 
-    /**
-     * Método que após o pedido ser processado, emite a licensa
-     */
-    private void emitirLicensa(){
-        Scanner sc = new Scanner(System.in);
-        System.out.println("Quantos dias durará a licensa ?");
-        int duracao = sc.nextInt();
+    private byte[] extrairConteudoDoZip(ZipInputStream zipInputStream) throws IOException {
+        ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
+        byte[] buffer = new byte[1024];
+        int len;
+        while ((len = zipInputStream.read(buffer)) > 0) {
+            byteArrayOutputStream.write(buffer, 0, len);
+        }
+        return byteArrayOutputStream.toByteArray();
+    }
 
+
+    private byte[] extrairArquivoDoZip(ZipInputStream zipInputStream, String nomeArquivo) throws Exception {
+        ZipEntry zipEntry;
+        ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+        byte[] buffer = new byte[1024];
+        int bytesRead;
+
+        while ((zipEntry = zipInputStream.getNextEntry()) != null) {
+            if (zipEntry.getName().equals(nomeArquivo)) {
+                while ((bytesRead = zipInputStream.read(buffer)) != -1) {outputStream.write(buffer, 0, bytesRead);}
+                zipInputStream.closeEntry();
+                return outputStream.toByteArray();
+            }
+            zipInputStream.closeEntry();
+        }
+        throw new IllegalArgumentException("Arquivo não encontrado: " + nomeArquivo);
+    }
+
+
+    private static byte[] decifrarDados(byte[] dadosCifrados, SecretKey chaveSimetrica) {
+        try {
+            Cipher cipher = Cipher.getInstance("AES");
+            cipher.init(Cipher.DECRYPT_MODE, chaveSimetrica);
+            return cipher.doFinal(dadosCifrados);
+        } catch (NoSuchAlgorithmException | NoSuchPaddingException | InvalidKeyException | IllegalBlockSizeException | BadPaddingException e) {throw new RuntimeException(e);}
+    }
+
+    private static byte[] decifrarChaveSimetrica(byte[] chaveSimetricaCifrada, PrivateKey privateKey) {
+        try {
+            Cipher cipher = Cipher.getInstance("RSA");
+            cipher.init(Cipher.DECRYPT_MODE, privateKey);
+            return cipher.doFinal(chaveSimetricaCifrada);
+        } catch (NoSuchAlgorithmException | NoSuchPaddingException | InvalidKeyException | IllegalBlockSizeException | BadPaddingException e) {throw new RuntimeException(e);}
     }
 }

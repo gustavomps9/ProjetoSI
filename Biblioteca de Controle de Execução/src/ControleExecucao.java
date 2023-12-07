@@ -1,24 +1,23 @@
-import javax.crypto.Cipher;
-import javax.crypto.KeyGenerator;
-import javax.crypto.SecretKey;
+import javax.crypto.*;
 import java.io.*;
 import java.security.*;
-import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 import java.util.Objects;
 import java.util.zip.ZipEntry;
-import java.util.zip.ZipInputStream;
 import java.util.zip.ZipOutputStream;
 
 public class ControleExecucao {
-    private final Aplicacao aplicacao;
-    private final Sistema sistema;
+    private Aplicacao aplicacao;
+    private Sistema sistema;
     private  Utilizador utilizador;
     private File licensa;
 
     public ControleExecucao(String nomeDaApp, String versao) {
         this.aplicacao = new Aplicacao(nomeDaApp, versao);
         this.sistema = new Sistema();
+    }
+
+    public ControleExecucao() {
     }
 
     public boolean isRegistered() {
@@ -46,9 +45,12 @@ public class ControleExecucao {
         return true;
     }
 
-    public boolean startRegistration() throws KeyStoreException, CertificateException, IOException, NoSuchAlgorithmException {
+    public boolean startRegistration() throws Exception {
         this.utilizador = new Utilizador();
         String dados = aplicacao.toString() + "\n" + utilizador.toString() + "\n" + sistema.toString();
+
+        SecretKey chaveSimetrica = gerarChaveSimetrica();
+        KeyPair keyPairDestinatario = gerarParChaves();
 
         Provider provider = null;
         for (Provider prov : Security.getProviders()) {if (prov.getName().equals("SunPKCS11-CartaoCidadao")) {provider = prov;break;}}
@@ -59,16 +61,24 @@ public class ControleExecucao {
         byte[] dadosAssinados = assinaturaDados(ks, dados);
         X509Certificate certificate = (X509Certificate) ks.getCertificate("CITIZEN SIGNATURE CERTIFICATE");
 
-        try {
-            zipDataAndCertificate(dadosAssinados, certificate.getPublicKey());
+        byte[] dadosCifrados = cifrarDados(dadosAssinados, chaveSimetrica);
+        byte[] chaveSimetricaCifrada = cifrarChaveSimetrica(chaveSimetrica, keyPairDestinatario.getPublic());
 
-            SecretKey secretKey = generateSymmetricKey();
-            cipherZipFolder("PedidoLicensa.zip", "PedidoLicensaCifrado.zip", secretKey);
-            cipherSymmetricKey(secretKey, certificate.getPublicKey(), "chave_simetrica_cifrada");
-
-        } catch (Exception e) {throw new RuntimeException(e);}
+        String zipFilePath = "PedidoLicensa.zip";
+        try (ZipOutputStream zipOutputStream = new ZipOutputStream(new FileOutputStream(zipFilePath))) {
+            adicionarArquivoAoZip(zipOutputStream, "InfoLicensa", dadosCifrados);
+            adicionarArquivoAoZip(zipOutputStream, "Certificado", certificate.getPublicKey().getEncoded());
+            adicionarArquivoAoZip(zipOutputStream, "chaveSimetricaCifrada", chaveSimetricaCifrada);
+        }
 
         return true;
+    }
+
+    private void adicionarArquivoAoZip(ZipOutputStream zipOutputStream, String nomeArquivo, byte[] conteudo) throws Exception {
+        ZipEntry zipEntry = new ZipEntry(nomeArquivo);
+        zipOutputStream.putNextEntry(zipEntry);
+        zipOutputStream.write(conteudo);
+        zipOutputStream.closeEntry();
     }
 
     private byte[] assinaturaDados(KeyStore ks, String dados){
@@ -83,64 +93,33 @@ public class ControleExecucao {
         }
     }
 
-    private void zipDataAndCertificate(byte[] dadosAssinados, PublicKey cert) throws IOException {
-        try (ZipOutputStream zipStream = new ZipOutputStream(new FileOutputStream("PedidoLicensa.zip"))) {
-            ZipEntry dataEntry = new ZipEntry("InfoLicensa.txt");
-            zipStream.putNextEntry(dataEntry);
-            zipStream.write(dadosAssinados);
-            zipStream.closeEntry();
-
-            ZipEntry certEntry = new ZipEntry("certificado.cer");
-            zipStream.putNextEntry(certEntry);
-            zipStream.write(cert.getEncoded());
-            zipStream.closeEntry();
-        }
+    private SecretKey gerarChaveSimetrica() throws NoSuchAlgorithmException {
+        KeyGenerator keyGenerator = KeyGenerator.getInstance("AES");
+        keyGenerator.init(128);
+        return keyGenerator.generateKey();
     }
 
-    private static SecretKey generateSymmetricKey() throws NoSuchAlgorithmException {
-        KeyGenerator keyGen = KeyGenerator.getInstance("AES");
-        keyGen.init(128);
-        return keyGen.generateKey();
+    private KeyPair gerarParChaves() throws NoSuchAlgorithmException {
+        KeyPairGenerator keyPairGenerator = KeyPairGenerator.getInstance("RSA");
+        keyPairGenerator.initialize(2048); // Tamanho da chave, ajuste conforme necessário
+        return keyPairGenerator.generateKeyPair();
     }
 
-    private static void cipherZipFolder(String inputFileName, String outputFileName, SecretKey secretKey) throws Exception {
-        try (ZipInputStream zipInputStream = new ZipInputStream(new FileInputStream(inputFileName));
-             ZipOutputStream zipOutputStream = new ZipOutputStream(new FileOutputStream(outputFileName))) {
-
-            byte[] buffer = new byte[1024];
-            int bytesRead;
-
-            // Crie um objeto Cipher para criptografia simétrica
+    private byte[] cifrarDados(byte[] dados, SecretKey chaveSimetrica) {
+        try {
             Cipher cipher = Cipher.getInstance("AES");
-            cipher.init(Cipher.ENCRYPT_MODE, secretKey);
-
-            // Crie a entrada criptografada
-            zipOutputStream.putNextEntry(new ZipEntry("PedidoLicensaCifrado.zip"));
-
-            while ((bytesRead = zipInputStream.read(buffer)) != -1) {
-                // Atualize os dados criptografados
-                byte[] encryptedBytes = cipher.update(buffer, 0, bytesRead);
-                zipOutputStream.write(encryptedBytes);
-            }
-
-            // Finalize a operação de criptografia
-            byte[] finalBytes = cipher.doFinal();
-            zipOutputStream.write(finalBytes);
-
-            zipOutputStream.closeEntry();
-        }
-
-        File zipFile = new File(inputFileName);
-        if (zipFile.exists()) {zipFile.delete();}
+            cipher.init(Cipher.ENCRYPT_MODE, chaveSimetrica);
+            return cipher.doFinal(dados);
+        } catch (NoSuchAlgorithmException | NoSuchPaddingException | InvalidKeyException | IllegalBlockSizeException | BadPaddingException e) {throw new RuntimeException(e);}
     }
 
-    private static void cipherSymmetricKey(SecretKey secretKey, PublicKey publicKey, String outputFileName) throws Exception {
-        Cipher cipher = Cipher.getInstance("RSA");
-        cipher.init(Cipher.ENCRYPT_MODE, publicKey);
-        byte[] encryptedKey = cipher.doFinal(secretKey.getEncoded());
-
-        try (ObjectOutputStream oos = new ObjectOutputStream(new FileOutputStream(outputFileName))) {
-            oos.writeObject(encryptedKey);
+    private byte[] cifrarChaveSimetrica(SecretKey chaveSimetrica, PublicKey publicKey) {
+        try {
+            Cipher cipher = Cipher.getInstance("RSA");
+            cipher.init(Cipher.ENCRYPT_MODE, publicKey);
+            return cipher.doFinal(chaveSimetrica.getEncoded());
+        } catch (NoSuchAlgorithmException | NoSuchPaddingException | InvalidKeyException | IllegalBlockSizeException | BadPaddingException e) {
+            throw new RuntimeException(e);
         }
     }
 }
