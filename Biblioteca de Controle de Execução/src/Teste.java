@@ -6,9 +6,10 @@ import java.security.*;
 import java.security.cert.Certificate;
 import java.security.cert.CertificateException;
 import java.util.Objects;
+import java.util.zip.ZipOutputStream;
 
 public class Teste {
-    public static void main(String[] args) throws KeyStoreException {
+    public static void main(String[] args) throws KeyStoreException, CertificateException, IOException, NoSuchAlgorithmException {
         ControleExecucao controleExecucao = new ControleExecucao("Bible YouVersion", "1.0");
         controleExecucao.startRegistration();
     }
