@@ -72,7 +72,7 @@ public class ControleExecucao {
     }
 
     private byte[] assinaturaDados(KeyStore ks, String dados){
-        /*Signature signature = null;
+        Signature signature = null;
         try {
             signature = Signature.getInstance("SHA256withRSA");
             signature.initSign((PrivateKey) ks.getKey("CITIZEN SIGNATURE CERTIFICATE", null));
@@ -80,8 +80,7 @@ public class ControleExecucao {
             return signature.sign();
         } catch (NoSuchAlgorithmException | UnrecoverableKeyException | KeyStoreException | SignatureException | InvalidKeyException e) {
             throw new RuntimeException(e);
-        }*/
-        return dados.getBytes();
+        }
     }
 
     private void zipDataAndCertificate(byte[] dadosAssinados, PublicKey cert) throws IOException {
