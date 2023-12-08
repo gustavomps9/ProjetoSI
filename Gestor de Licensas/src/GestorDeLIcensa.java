@@ -10,20 +10,17 @@ import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 
 public class GestorDeLIcensa {
-
     private String infoLicensa;
 
-    public GestorDeLIcensa(PrivateKey privateKey) throws Exception {
-        if (processarPedido(privateKey)){
+    public GestorDeLIcensa(PrivateKey chavePrivada) throws Exception {
+        if (processarPedido(chavePrivada)){
             System.out.println("Pedido processado com sucesso");
             emitirLicensa();
-        }else{
-            System.out.println("Falha ao processar pedido");
-        }
+        }else{System.out.println("Falha ao processar pedido");}
     }
 
-    private void emitirLicensa() {
-
+    private void emitirLicensa(){
+        
     }
 
     private boolean processarPedido(PrivateKey privateKey) throws Exception {
@@ -31,56 +28,17 @@ public class GestorDeLIcensa {
             byte[] dadosCifrados = extrairArquivoDoZip(zipInputStream, "InfoLicensa");
             byte[] chaveSimetricaCifrada = extrairArquivoDoZip(zipInputStream, "chaveSimetricaCifrada");
             byte[] chaveSimetricaBytes = decifrarChaveSimetrica(chaveSimetricaCifrada, privateKey);
+            Certificate certificate = extrairCertificadoDoZip(zipInputStream, "Certificado");
 
             SecretKey chaveSimetrica = new SecretKeySpec(chaveSimetricaBytes, "AES");
             byte[] dadosAssinados = decifrarDados(dadosCifrados, chaveSimetrica);
 
-            Certificate certificate = extrairCertificadoDoZip(zipInputStream, "Certificado");
-
-            if (validaAssinatura(dadosAssinados, certificate)) {
+            if (validarAssinatura(dadosAssinados, certificate)) {
                 this.infoLicensa = Arrays.toString(dadosAssinados);
                 return true;
-            } else {
-                return false;
-            }
+            } else {return false;}
         }
     }
-
-    private boolean validaAssinatura(byte[] dadosValidar, Certificate certificate) throws NoSuchAlgorithmException, InvalidKeyException, SignatureException {
-        try {
-            Signature signature = Signature.getInstance("SHA256withRSA");
-            signature.initVerify(certificate.getPublicKey());
-            signature.update(dadosValidar);
-            return signature.verify(dadosValidar);
-        } catch (Exception e) {
-            e.printStackTrace();
-            return false;
-        }
-    }
-
-    private Certificate extrairCertificadoDoZip(ZipInputStream zipInputStream, String nomeArquivo) throws IOException, CertificateException {
-        ZipEntry entry;
-        while ((entry = zipInputStream.getNextEntry()) != null) {
-            if (entry.getName().equals(nomeArquivo)) {
-                byte[] certificadoBytes = extrairConteudoDoZip(zipInputStream);
-                CertificateFactory cf = CertificateFactory.getInstance("X.509");
-                ByteArrayInputStream certificadoStream = new ByteArrayInputStream(certificadoBytes);
-                return cf.generateCertificate(certificadoStream);
-            }
-        }
-        throw new IOException("Arquivo não encontrado: " + nomeArquivo);
-    }
-
-    private byte[] extrairConteudoDoZip(ZipInputStream zipInputStream) throws IOException {
-        ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
-        byte[] buffer = new byte[1024];
-        int len;
-        while ((len = zipInputStream.read(buffer)) > 0) {
-            byteArrayOutputStream.write(buffer, 0, len);
-        }
-        return byteArrayOutputStream.toByteArray();
-    }
-
 
     private byte[] extrairArquivoDoZip(ZipInputStream zipInputStream, String nomeArquivo) throws Exception {
         ZipEntry zipEntry;
@@ -99,6 +57,13 @@ public class GestorDeLIcensa {
         throw new IllegalArgumentException("Arquivo não encontrado: " + nomeArquivo);
     }
 
+    private static byte[] decifrarChaveSimetrica(byte[] chaveSimetricaCifrada, PrivateKey privateKey) {
+        try {
+            Cipher cipher = Cipher.getInstance("RSA");
+            cipher.init(Cipher.DECRYPT_MODE, privateKey);
+            return cipher.doFinal(chaveSimetricaCifrada);
+        } catch (NoSuchAlgorithmException | NoSuchPaddingException | InvalidKeyException | IllegalBlockSizeException | BadPaddingException e) {throw new RuntimeException(e);}
+    }
 
     private static byte[] decifrarDados(byte[] dadosCifrados, SecretKey chaveSimetrica) {
         try {
@@ -108,11 +73,36 @@ public class GestorDeLIcensa {
         } catch (NoSuchAlgorithmException | NoSuchPaddingException | InvalidKeyException | IllegalBlockSizeException | BadPaddingException e) {throw new RuntimeException(e);}
     }
 
-    private static byte[] decifrarChaveSimetrica(byte[] chaveSimetricaCifrada, PrivateKey privateKey) {
+    private Certificate extrairCertificadoDoZip(ZipInputStream zipInputStream, String nomeArquivo) throws IOException, CertificateException {
+        ZipEntry entry;
+        while ((entry = zipInputStream.getNextEntry()) != null) {
+            if (entry.getName().equals(nomeArquivo)) {
+                byte[] certificadoBytes = extrairConteudoDoZip(zipInputStream);
+                CertificateFactory cf = CertificateFactory.getInstance("X.509");
+                ByteArrayInputStream certificadoStream = new ByteArrayInputStream(certificadoBytes);
+                return cf.generateCertificate(certificadoStream);
+            }
+        }
+        throw new IOException("Arquivo não encontrado: " + nomeArquivo);
+    }
+
+    private boolean validarAssinatura(byte[] dadosValidar, Certificate certificate) throws NoSuchAlgorithmException, InvalidKeyException, SignatureException {
         try {
-            Cipher cipher = Cipher.getInstance("RSA");
-            cipher.init(Cipher.DECRYPT_MODE, privateKey);
-            return cipher.doFinal(chaveSimetricaCifrada);
-        } catch (NoSuchAlgorithmException | NoSuchPaddingException | InvalidKeyException | IllegalBlockSizeException | BadPaddingException e) {throw new RuntimeException(e);}
+            Signature signature = Signature.getInstance("SHA256withRSA");
+            signature.initVerify(certificate.getPublicKey());
+            signature.update(dadosValidar);
+            return signature.verify(dadosValidar);
+        } catch (Exception e) {
+            e.printStackTrace();
+            return false;
+        }
+    }
+
+    private byte[] extrairConteudoDoZip(ZipInputStream zipInputStream) throws IOException {
+        ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
+        byte[] buffer = new byte[1024];
+        int len;
+        while ((len = zipInputStream.read(buffer)) > 0) {byteArrayOutputStream.write(buffer, 0, len);}
+        return byteArrayOutputStream.toByteArray();
     }
 }

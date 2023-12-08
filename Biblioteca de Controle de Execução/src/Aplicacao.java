@@ -1,6 +1,6 @@
 public class Aplicacao {
-    private String nome;
-    private String versao;
+    private final String nome;
+    private final String versao;
 
     public Aplicacao(String nome, String versao) {
         this.nome = nome;
@@ -8,5 +8,7 @@ public class Aplicacao {
     }
 
     @Override
-    public String toString() {return "{Nome:'" + nome + '\'' + ", Versão:'" + versao + "'}";}
+    public String toString() {
+        return "{Nome:'" + nome + '\'' + ", Versão:'" + versao + "'}";
+    }
 }

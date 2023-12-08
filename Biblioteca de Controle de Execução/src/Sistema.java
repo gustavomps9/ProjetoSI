@@ -7,16 +7,16 @@ import java.util.List;
 import java.util.StringJoiner;
 
 public class Sistema {
-    private int numCpus;
-    private String tipoCpus;
-    private List<String> macAddresses;
-    private List<String> volumeSerialNumbers;
+    private final List<String> macAddresses;
+    private final List<String> volumeSerialNumbers;
+    private final int numCpus;
+    private final String tipoCpus;
 
     public Sistema() {
-        this.numCpus = Runtime.getRuntime().availableProcessors();
-        this.tipoCpus = System.getProperty("os.arch");
         this.macAddresses = getMacAddresses();
         this.volumeSerialNumbers = getVolumeSerialNumbers();
+        this.numCpus = Runtime.getRuntime().availableProcessors();
+        this.tipoCpus = System.getProperty("os.arch");
     }
 
     private List<String> getMacAddresses() {
@@ -29,15 +29,11 @@ public class Sistema {
                 byte[] mac = networkInterface.getHardwareAddress();
                 if (mac != null) {
                     StringBuilder macAddress = new StringBuilder();
-                    for (int i = 0; i < mac.length; i++) {
-                        macAddress.append(String.format("%02X%s", mac[i], (i < mac.length - 1) ? "-" : ""));
-                    }
+                    for (int i = 0; i < mac.length; i++) {macAddress.append(String.format("%02X%s", mac[i], (i < mac.length - 1) ? "-" : ""));}
                     macAddresses.add(macAddress.toString());
                 }
             }
-        } catch (SocketException e) {
-            e.printStackTrace();
-        }
+        } catch (SocketException e) {e.printStackTrace();}
         return macAddresses;
     }
 
@@ -59,12 +55,8 @@ public class Sistema {
                 ProcessBuilder processBuilder = new ProcessBuilder("cmd", "/c", "vol", root.toString());
                 Process process = processBuilder.start();
 
-                try (java.util.Scanner scanner = new java.util.Scanner(process.getInputStream()).useDelimiter("\\A")) {
-                    return scanner.hasNext() ? scanner.next().trim() : "N/A";
-                }
-            } else {
-                return "N/A";
-            }
+                try (java.util.Scanner scanner = new java.util.Scanner(process.getInputStream()).useDelimiter("\\A")) {return scanner.hasNext() ? scanner.next().trim() : "N/A";}
+            } else {return "N/A";}
         } catch (Exception e) {
             e.printStackTrace();
             return "N/A";

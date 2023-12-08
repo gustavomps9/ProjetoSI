@@ -1,9 +1,9 @@
 import java.util.Scanner;
 
 public class Utilizador {
-    private String nome;
-    private String email;
-    private int numIdentificacaoCivil;
+    private final String nome;
+    private final String email;
+    private final int numIdentificacaoCivil;
 
     public Utilizador() {
         Scanner scanner = new Scanner(System.in);
@@ -20,7 +20,6 @@ public class Utilizador {
 
     @Override
     public String toString() {
-        return "{Nome:'" + nome + '\'' + ", Email:'" + email + '\'' +
-                ", Número de Identificação Civil:'" + numIdentificacaoCivil + "'}";
+        return "{Nome:'" + nome + '\'' + ", Email:'" + email + '\'' + ", Número de Identificação Civil:'" + numIdentificacaoCivil + "'}";
     }
 }
