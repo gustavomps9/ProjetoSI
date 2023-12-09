@@ -6,21 +6,46 @@ import java.security.cert.Certificate;
 import java.security.cert.CertificateException;
 import java.security.cert.CertificateFactory;
 import java.util.Arrays;
+import java.util.Scanner;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 
 public class GestorDeLIcensa {
     private String infoLicensa;
 
-    public GestorDeLIcensa(PrivateKey chavePrivada) throws Exception {
-        if (processarPedido(chavePrivada)){
+    public GestorDeLIcensa(PrivateKey chavePrivada1, PrivateKey chavePrivada2) throws Exception {
+        if (processarPedido(chavePrivada1)){
             System.out.println("Pedido processado com sucesso");
-            emitirLicensa();
+            emitirLicensa(chavePrivada2);
         }else{System.out.println("Falha ao processar pedido");}
     }
 
-    private void emitirLicensa(){
-        
+    private void emitirLicensa(PrivateKey privateKey) throws Exception {
+        registroDistribuicao();
+        Scanner scanner = new Scanner(System.in);
+
+        System.out.println("Indica a data de validade da licensa: ");
+        String data = scanner.nextLine();
+
+        //EmissorLicensa emissorLicensa = new EmissorLicensa(infoLicensa, data, privateKey);
+    }
+
+    private void registroDistribuicao(){
+        File pasta = new File("Apps Distribuídas");
+        File[] arquivos = pasta.listFiles();
+
+        String nomeDoArquivo = "App " + ((arquivos != null) ? arquivos.length + 1 : 1);
+
+        File arquivo = new File("Apps Distribuídas" + File.separator + nomeDoArquivo);
+
+        try {
+            if (!arquivo.getParentFile().exists()) {arquivo.getParentFile().mkdirs();}
+            arquivo.createNewFile();
+
+            FileWriter escritor = new FileWriter(arquivo);
+            escritor.write(this.infoLicensa);
+            escritor.close();
+        } catch (IOException e) {e.printStackTrace();}
     }
 
     private boolean processarPedido(PrivateKey privateKey) throws Exception {
