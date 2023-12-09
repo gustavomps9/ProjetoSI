@@ -1,18 +1,30 @@
+import com.google.gson.Gson;
+
 import java.io.File;
 import java.net.NetworkInterface;
 import java.net.SocketException;
 import java.util.ArrayList;
 import java.util.Enumeration;
 import java.util.List;
-import java.util.StringJoiner;
+import java.util.stream.Collectors;
 
-public class Sistema {
-    private final List<String> macAddresses;
-    private final List<String> volumeSerialNumbers;
-    private final int numCpus;
-    private final String tipoCpus;
+public class DadosLicensa {
+    public String nome;
+    public String email;
+    public int numIdentificacaoCivil;
+    public String nomeApp;
+    public String versao;
+    public List<String> macAddresses;
+    public List<String> volumeSerialNumbers;
+    public int numCpus;
+    public String tipoCpus;
 
-    public Sistema() {
+    public DadosLicensa(String nome, String email, int numIdentificacaoCivil, String nomeApp, String versao) {
+        this.nome = nome;
+        this.email = email;
+        this.numIdentificacaoCivil = numIdentificacaoCivil;
+        this.nomeApp = nomeApp;
+        this.versao = versao;
         this.macAddresses = getMacAddresses();
         this.volumeSerialNumbers = getVolumeSerialNumbers();
         this.numCpus = Runtime.getRuntime().availableProcessors();
@@ -63,15 +75,16 @@ public class Sistema {
         }
     }
 
-    @Override
-    public String toString() {
-        StringBuilder result = new StringBuilder();
-        result.append("Número de CPUs: ").append(numCpus).append("\n");
-        result.append("Tipo de CPUs: ").append(tipoCpus).append("\n");
-        result.append("Endereços MAC:\n");
-        for (String macAddress : macAddresses) {result.append("  ").append(macAddress).append("\n");}
-        result.append("Números de Série dos Volumes:\n");
-        for (String volumeSerialNumber : volumeSerialNumbers) {result.append("  ").append(volumeSerialNumber).append("\n");}
-        return result.toString();
+    public String toJson() {
+        String utilizador = String.format("\"Utilizador\":{\"nome\":\"%s\",\"email\":\"%s\",\"numIdentificacaoCivil\":%d}", this.nome, this.email, this.numIdentificacaoCivil);
+
+        String app = String.format("\"App\":{\"app\":\"%s\",\"versao\":\"%s\"}", this.nomeApp, this.versao);
+
+        String sistema = String.format("\"Sistema\":{\"macAddresses\":[%s],\"volumeSerialNumbers\":[%s],\"numCpus\":%d,\"tipoCpus\":\"%s\"}",
+                this.macAddresses.stream().map(s -> "\"" + s + "\"").collect(Collectors.joining(",")),
+                this.volumeSerialNumbers.stream().map(s -> "\"" + s + "\"").collect(Collectors.joining(",")),
+                this.numCpus, tipoCpus);
+
+        return String.format("{%s,\n%s,\n%s}", utilizador, app, sistema);
     }
 }

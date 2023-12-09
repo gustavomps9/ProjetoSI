@@ -10,10 +10,10 @@ import java.util.Scanner;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 
-public class GestorDeLIcensa {
+public class GestorDeLIcensaOld {
     private String infoLicensa;
 
-    public GestorDeLIcensa(PrivateKey chavePrivada1, PrivateKey chavePrivada2) throws Exception {
+    public GestorDeLIcensaOld(PrivateKey chavePrivada1, PrivateKey chavePrivada2) throws Exception {
         if (processarPedido(chavePrivada1)){
             System.out.println("Pedido processado com sucesso");
             emitirLicensa(chavePrivada2);
