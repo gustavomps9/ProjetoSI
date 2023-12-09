@@ -12,31 +12,6 @@ public class ControleExecucaoOld {
     private Sistema sistema;
     private File licensa;
 
-    public ControleExecucaoOld(String nomeDaApp, String versao) {
-        this.aplicacao = new Aplicacao(nomeDaApp, versao);
-        this.sistema = new Sistema();
-        isRegistered();
-    }
-
-    public boolean isRegistered() {
-        String userDirectory = System.getProperty("user.dir");
-        String fullPath = userDirectory + File.separator + "licensa";
-        File folder = new File(fullPath);
-
-        if (folder.exists() && folder.isDirectory()) {
-            File[] files = folder.listFiles();
-            if (files != null) {
-                for (File file : files) {
-                    if (validacaoLicensa(file)) {
-                        this.licensa = file;
-                        return true;
-                    }
-                }
-            }
-        }
-        return false;
-    }
-
     public boolean startRegistration() throws Exception {
         Utilizador utilizador = new Utilizador();
         String dados = aplicacao.toString() + "\n" + utilizador.toString() + "\n" + sistema.toString();
@@ -63,15 +38,6 @@ public class ControleExecucaoOld {
             adicaoArquivoAoZip(zipOutputStream, "Certificado", certificate.getPublicKey().getEncoded());
             adicaoArquivoAoZip(zipOutputStream, "chaveSimetricaCifrada", chaveSimetricaCifrada);
         }
-        return true;
-    }
-
-    public void showLicenseInfo(){
-        //código a implementar para mostrar as informações da licensa
-    }
-
-    private boolean validacaoLicensa(File file) {
-        //código a implementar sincronizado com a emissão da licensa no gestor
         return true;
     }
 

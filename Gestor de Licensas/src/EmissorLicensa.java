@@ -6,6 +6,8 @@ import java.io.IOException;
 import java.security.KeyPair;
 import java.security.Security;
 import java.security.Signature;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipOutputStream;
 
 public class EmissorLicensa {
     private KeyPair parChaves;
@@ -20,10 +22,7 @@ public class EmissorLicensa {
 
         try {
             gerarChaveSimetrica();
-            salvarNoFicheiro("Assinatura", assinaLicensa());
-            salvarNoFicheiro("Licensa", cifraDados());
-            salvarNoFicheiro("ChaveValidacao", parChaves.getPublic().getEncoded());
-            salvarNoFicheiro("ChaveSimetrica", this.chaveSimetrica.getEncoded());
+            salvarNaPastaZip("licenca.zip");
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
@@ -54,5 +53,23 @@ public class EmissorLicensa {
         } catch (IOException e) {
             e.printStackTrace();
         }
+    }
+
+    private void salvarNaPastaZip(String zipFileName) {
+        try (FileOutputStream fos = new FileOutputStream(zipFileName);
+             ZipOutputStream zos = new ZipOutputStream(fos)) {
+
+            adicionarAoZip("Assinatura", assinaLicensa(), zos);
+            adicionarAoZip("Licenca", cifraDados(), zos);
+            adicionarAoZip("ChaveValidacao", parChaves.getPublic().getEncoded(), zos);
+            adicionarAoZip("ChaveSimetrica", this.chaveSimetrica.getEncoded(), zos);
+        } catch (Exception e) {e.printStackTrace();}
+    }
+
+    private void adicionarAoZip(String entryName, byte[] data, ZipOutputStream zos) throws IOException {
+        ZipEntry entry = new ZipEntry(entryName);
+        zos.putNextEntry(entry);
+        zos.write(data);
+        zos.closeEntry();
     }
 }
