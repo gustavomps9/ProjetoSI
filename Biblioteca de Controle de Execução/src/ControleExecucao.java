@@ -29,8 +29,11 @@ public class ControleExecucao {
             byte[] chaveSimetricaBytes = validaLicensa.carregarDadosLicensa("licenca/ChaveSimetrica");
 
             if (validaLicensa.validarAssinaturaLicensa(chaveValidacao, assinatura, dadosCifrados)) {
-                this.infoLicensa = validaLicensa.decifrarDadosLicensa(chaveSimetricaBytes, dadosCifrados);
-                return true;
+                String dadosLicensa = validaLicensa.decifrarDadosLicensa(chaveSimetricaBytes, dadosCifrados);
+                if(validaLicensa.validaConteudo(dadosLicensa, this.nomeApp, this.versao)){
+                    this.infoLicensa = validaLicensa.decifrarDadosLicensa(chaveSimetricaBytes, dadosCifrados);
+                    return true;
+                }else{return false;}
             } else {return false;}
         } catch (Exception e) {
             System.out.println("Erro: " + e);

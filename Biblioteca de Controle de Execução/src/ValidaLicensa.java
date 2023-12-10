@@ -1,19 +1,38 @@
 import javax.crypto.*;
 import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.security.*;
 import java.security.spec.InvalidKeySpecException;
 import java.security.spec.X509EncodedKeySpec;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 
 public class ValidaLicensa {
     public ValidaLicensa() {
         Security.addProvider(new org.bouncycastle.jce.provider.BouncyCastleProvider());
     }
 
-    private boolean validaConteudo(){
-        //lógica a implementar
-        return false;
+    public boolean validaConteudo(String jsonString, String nomeApp, String versaoApp) {
+        String nomeAppNoJson = jsonString.substring(jsonString.indexOf("\"app\":\"") + 7, jsonString.indexOf("\",\"versao\""));
+        String versaoAppNoJson = jsonString.substring(jsonString.indexOf("\"versao\":\"") + 10, jsonString.indexOf("\"}", jsonString.indexOf("\"versao\":\"")));
+
+        if (!nomeAppNoJson.equals(nomeApp) || !versaoAppNoJson.equals(versaoApp)) {
+            System.out.println("Nome ou versão da aplicação não correspondem.");
+            return false;
+        }
+
+        String dataExpiracaoString = jsonString.substring(jsonString.indexOf("\"Data expiracao\":\"") + 18, jsonString.indexOf("\"}", jsonString.indexOf("\"Data expiracao\":\"")));
+
+        SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSSZ");
+        try {
+            Date dataExpiracao = sdf.parse(dataExpiracaoString);
+            Date dataAtual = new Date();
+            return dataExpiracao.after(dataAtual);
+        } catch (ParseException e) {
+            e.printStackTrace();
+            return false;
+        }
     }
 
     public PublicKey carregarChaveValidacao(String nomeFicheiro) {
