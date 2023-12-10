@@ -1,4 +1,3 @@
-import java.io.IOException;
 import java.security.PublicKey;
 import java.util.Scanner;
 
@@ -7,11 +6,20 @@ public class ControleExecucao {
     public String nomeApp;
     public String versao;
 
+    /**
+     * construtor que inicializa as variáveis para identificar a aplicação
+     * @param nomeApp
+     * @param versao
+     */
     public ControleExecucao(String nomeApp, String versao) {
         this.nomeApp = nomeApp;
         this.versao = versao;
     }
 
+    /**
+     * verifica a existência da licensa e seus ficheiros e valida a licensa
+     * @return
+     */
     public boolean isRegistered() {
         ValidaLicensa validaLicensa = new ValidaLicensa();
         try {
@@ -30,6 +38,10 @@ public class ControleExecucao {
         }
     }
 
+    /**
+     * inicia o processo de criação dos ficheiros para o pedido de licensa
+     * @return
+     */
     public boolean startRegistration(){
         Scanner scanner = new Scanner(System.in);
         System.out.println("Nome: ");
@@ -41,10 +53,12 @@ public class ControleExecucao {
 
         DadosLicensa dadosLicensa = new DadosLicensa(nome, email, numIdCivil, this.nomeApp, this.versao);
         EmitePedido emitePedido = new EmitePedido(dadosLicensa.toJson());
-        //Resto da lógica
         return true;
     }
 
+    /**
+     * prime na linha de comandos as informações da licensa
+     */
     public void showLicenseInfo(){
         System.out.println(this.infoLicensa);
     }

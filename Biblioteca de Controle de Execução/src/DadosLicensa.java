@@ -19,6 +19,14 @@ public class DadosLicensa {
     public int numCpus;
     public String tipoCpus;
 
+    /**
+     * instancia os dados do pedido de licensa
+     * @param nome
+     * @param email
+     * @param numIdentificacaoCivil
+     * @param nomeApp
+     * @param versao
+     */
     public DadosLicensa(String nome, String email, int numIdentificacaoCivil, String nomeApp, String versao) {
         this.nome = nome;
         this.email = email;
@@ -31,6 +39,10 @@ public class DadosLicensa {
         this.tipoCpus = System.getProperty("os.arch");
     }
 
+    /**
+     * busca os mac addresses da máquina do utilizador
+     * @return
+     */
     private List<String> getMacAddresses() {
         List<String> macAddresses = new ArrayList<>();
 
@@ -45,10 +57,16 @@ public class DadosLicensa {
                     macAddresses.add(macAddress.toString());
                 }
             }
-        } catch (SocketException e) {e.printStackTrace();}
+        } catch (SocketException e) {
+            System.out.println("Erro: " + e);
+        }
         return macAddresses;
     }
 
+    /**
+     * busca os serial numbers da máquina do utilizador
+     * @return
+     */
     private List<String> getVolumeSerialNumbers() {
         List<String> volumeSerialNumbers = new ArrayList<>();
 
@@ -70,11 +88,15 @@ public class DadosLicensa {
                 try (java.util.Scanner scanner = new java.util.Scanner(process.getInputStream()).useDelimiter("\\A")) {return scanner.hasNext() ? scanner.next().trim() : "N/A";}
             } else {return "N/A";}
         } catch (Exception e) {
-            e.printStackTrace();
+            System.out.println("Erro: " + e);
             return "N/A";
         }
     }
 
+    /**
+     * formata em json o dados para o pedido de licensa
+     * @return
+     */
     public String toJson() {
         String utilizador = String.format("\"Utilizador\":{\"nome\":\"%s\",\"email\":\"%s\",\"numIdentificacaoCivil\":%d}", this.nome, this.email, this.numIdentificacaoCivil);
 
