@@ -9,10 +9,17 @@ import java.text.SimpleDateFormat;
 import java.util.Date;
 
 public class ValidaLicensa {
+    /**
+     * construtor que inicializa a classe ao adicionar o provider de segurança Bouncy Castle
+     */
     public ValidaLicensa() {
         Security.addProvider(new org.bouncycastle.jce.provider.BouncyCastleProvider());
     }
 
+    /**
+     * valida o conteúdo de uma licença, comparando o nome e a versão da aplicação com os dados contidos na string JSON
+     * @return
+     */
     public boolean validaConteudo(String jsonString, String nomeApp, String versaoApp) {
         String nomeAppNoJson = jsonString.substring(jsonString.indexOf("\"app\":\"") + 7, jsonString.indexOf("\",\"versao\""));
         String versaoAppNoJson = jsonString.substring(jsonString.indexOf("\"versao\":\"") + 10, jsonString.indexOf("\"}", jsonString.indexOf("\"versao\":\"")));
@@ -35,6 +42,10 @@ public class ValidaLicensa {
         }
     }
 
+    /**
+     * carrega os dados da licença de um ficheiro especificado
+     * @return
+     */
     public PublicKey carregarChaveValidacao(String nomeFicheiro) {
         try {
             byte[] chavePublicaBytes = carregarDadosLicensa(nomeFicheiro);
@@ -47,6 +58,10 @@ public class ValidaLicensa {
         }
     }
 
+    /**
+     * carrega os dados da licença de um ficheiro especificado
+     * @return
+     */
     public byte[] carregarDadosLicensa(String nomeFicheiro){
         try {
             FileInputStream fis = new FileInputStream(nomeFicheiro);
@@ -59,6 +74,10 @@ public class ValidaLicensa {
         }
     }
 
+    /**
+     * valida a assinatura digital dos dados cifrados usando a chave de validação (pública)
+     * @return
+     */
     public boolean validarAssinaturaLicensa(PublicKey chaveValidacao, byte[] assinatura, byte[] dadosCifrados){
         try {
             Signature signature = Signature.getInstance("SHA256withRSA", "BC");
@@ -71,6 +90,10 @@ public class ValidaLicensa {
         }
     }
 
+    /**
+     * decifra os dados cifrados usando uma chave simétrica
+     * @return
+     */
     public String decifrarDadosLicensa(byte[] chaveSimetricaBytes, byte[] dadosCifrados){
         try {
             Cipher cipher = Cipher.getInstance("AES", "BC");

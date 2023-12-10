@@ -24,6 +24,12 @@ public class GestorDeLicensa {
         }
     }
 
+    /**
+     * verifica a assinatura do pedido de licença usando a chave pública associada ao certificado
+     * se a assinatura for válida, carrega a chave simétrica cifrada, a chave privada e realiza a decifra da chave simétrica
+     * utiliza a chave simétrica para decifrar os dados do pedido
+     * @return
+     */
     public boolean processaPedido(byte[] conteudo, byte[] signature, PublicKey publicKey){
         if (verificaAssinatura(conteudo, signature, publicKey)) {
             byte[] encryptedSymmetricKey = carregaConteudo("PedidoLicensa/chaveSimetrica");
@@ -36,6 +42,10 @@ public class GestorDeLicensa {
         else {return false;}
     }
 
+    /**
+     * carrega o conteúdo de um ficheiro especificado como um array de bytes
+     * @return
+     */
     private static byte[] carregaConteudo(String fileName){
         Path path = Paths.get(fileName);
         try {
@@ -56,6 +66,10 @@ public class GestorDeLicensa {
         }
     }
 
+    /**
+     * carrega um certificado X.509 a partir de um ficheiro especificado
+     * @return
+     */
     private static PublicKey carregaCertificado(String fileName){
         Path path = Paths.get(fileName);
         try {
@@ -70,6 +84,10 @@ public class GestorDeLicensa {
         }
     }
 
+    /**
+     * verifica a assinatura digital dos dados utilizando uma chave pública
+     * @return
+     */
     private static boolean verificaAssinatura(byte[] data, byte[] signature, PublicKey publicKey){
         try {
             Signature sig = Signature.getInstance("SHA256withRSA");
@@ -82,6 +100,10 @@ public class GestorDeLicensa {
         }
     }
 
+    /**
+     * carrega uma chave privada a partir de um ficheiro especificado
+     * @return
+     */
     private static PrivateKey carregaChaveDecifra(String fileName){
         Path path = Paths.get(fileName);
         try {
@@ -96,6 +118,10 @@ public class GestorDeLicensa {
         }
     }
 
+    /**
+     * decifra a chave simétrica utilizando uma chave privada RSA
+     * @return
+     */
     private static SecretKey decifraChaveSimetrica(byte[] encryptedSymmetricKey, PrivateKey privateKey){
         try {
             Cipher cipher = Cipher.getInstance("RSA");
@@ -108,6 +134,10 @@ public class GestorDeLicensa {
         }
     }
 
+    /**
+     * decifra os dados cifrados simetricamente utilizando uma chave simétrica
+     * @return
+     */
     public byte[] decifrarDadosSimetricamente(SecretKey chaveSimetrica, byte[] dadosCifrados){
         try {
             Cipher cipher = Cipher.getInstance("AES");

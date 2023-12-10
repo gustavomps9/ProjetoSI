@@ -21,7 +21,8 @@ public class ControleExecucao {
     }
 
     /**
-     * verifica a existência da licensa e seus ficheiros e valida a licensa
+     * verifica a existência da licença e dos ficheiros
+     * é validada a licença
      * @return
      */
     public boolean isRegistered() {
@@ -46,7 +47,7 @@ public class ControleExecucao {
     }
 
     /**
-     * inicia o processo de criação dos ficheiros para o pedido de licensa
+     * inicia o processo de criação dos ficheiros para o pedido de licença
      * @return
      */
     public boolean startRegistration(){
@@ -66,7 +67,7 @@ public class ControleExecucao {
     }
 
     /**
-     * prime na linha de comandos as informações da licensa
+     * são carregadas as informações na linha de comandos
      */
     public void showLicenseInfo(){
         System.out.println(this.infoLicensa);

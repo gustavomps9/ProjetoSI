@@ -20,7 +20,7 @@ public class DadosLicensa {
     public String tipoCpus;
 
     /**
-     * instancia os dados do pedido de licensa
+     * instancia os dados do pedido de licença
      * @param nome
      * @param email
      * @param numIdentificacaoCivil
@@ -40,7 +40,7 @@ public class DadosLicensa {
     }
 
     /**
-     * busca os mac addresses da máquina do utilizador
+     * procura os mac addresses da máquina do utilizador
      * @return
      */
     private List<String> getMacAddresses() {
@@ -64,7 +64,7 @@ public class DadosLicensa {
     }
 
     /**
-     * busca os serial numbers da máquina do utilizador
+     * procura os serial numbers da máquina do utilizador
      * @return
      */
     private List<String> getVolumeSerialNumbers() {
@@ -94,7 +94,7 @@ public class DadosLicensa {
     }
 
     /**
-     * formata em json o dados para o pedido de licensa
+     * os daods para o pedido de licença são formatados em json
      * @return
      */
     public String toJson() {

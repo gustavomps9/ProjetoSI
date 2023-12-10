@@ -11,6 +11,10 @@ import java.util.zip.ZipOutputStream;
 public class EmitePedido {
     public String dados;
 
+    /**
+     * construtor que inicializa as variáveis para a emissão do pedido
+     * @param dadosPedido
+     */
     public EmitePedido(String dadosPedido) throws KeyStoreException, CertificateException, IOException, NoSuchAlgorithmException {
         this.dados = dadosPedido;
 
@@ -27,6 +31,10 @@ public class EmitePedido {
         }
     }
 
+    /**
+     * obtém o repositório de chaves do provedor especificado.
+     * @return
+     */
     private KeyStore getKeyStore(){
         Provider provider = null;
         for (Provider prov : Security.getProviders()) {if (prov.getName().equals("SunPKCS11-CartaoCidadao")) {provider = prov;break;}}
@@ -40,6 +48,9 @@ public class EmitePedido {
         }
     }
 
+    /**
+     * emite os ficheiros necessários para o pedido de licença num ficheiro zip.
+     */
     private void emiteFicheiros(byte[] dadosCifrados, byte[] assinatura, X509Certificate certificado, byte[] chaveCifrada, byte[] chavePrivada){
         try (ZipOutputStream zipOut = new ZipOutputStream(new FileOutputStream("PedidoLicensa.zip"))) {
             adicionarArquivoAoZip(zipOut, "pedidoLicenca", dadosCifrados);
@@ -52,6 +63,10 @@ public class EmitePedido {
         }
     }
 
+
+    /**
+     * adiciona um ficheiro ao ficheiro zip
+     */
     private void adicionarArquivoAoZip(ZipOutputStream zipOut, String nomeArquivo, byte[] dados){
         try {
             ZipEntry entrada = new ZipEntry(nomeArquivo);
@@ -63,6 +78,10 @@ public class EmitePedido {
         }
     }
 
+    /**
+     * gera um par de chaves assimétricas RSA com tamanho de 2048 bits.
+     * @return
+     */
     private KeyPair geracaoParChave(){
         try {
             KeyPairGenerator keyPairGenerator = KeyPairGenerator.getInstance("RSA");
@@ -74,6 +93,10 @@ public class EmitePedido {
         }
     }
 
+    /**
+     * gera uma chave simétrica AES com tamanho de 256 bits.
+     * @return
+     */
     private SecretKey geracaoChaveSimetrica(){
         try {
             KeyGenerator keyGenerator = KeyGenerator.getInstance("AES");
@@ -85,6 +108,10 @@ public class EmitePedido {
         }
     }
 
+    /**
+     * cifra os dados utilizando uma chave simétrica AES.
+     * @return
+     */
     private byte[] cifragemDados(SecretKey secretKey, byte[] bytes) {
         try {
             Cipher cipher = Cipher.getInstance("AES");
@@ -96,6 +123,10 @@ public class EmitePedido {
         }
     }
 
+    /**
+     * assina os dados utilizando a chave privada associada ao certificado.
+     * @return
+     */
     private byte[] assinaDados(byte[] data, KeyStore ks) {
         try {
             Signature signature = Signature.getInstance("SHA256withRSA");
@@ -108,6 +139,10 @@ public class EmitePedido {
         } catch (UnrecoverableKeyException | KeyStoreException e) {throw new RuntimeException(e);}
     }
 
+    /**
+     * cifra os dados utilizando uma chave pública RSA.
+     * @return
+     */
     private byte[] cifragemAssimetrica(byte[] data, PublicKey publicKey) {
         try {
             Cipher cipher = Cipher.getInstance("RSA");
