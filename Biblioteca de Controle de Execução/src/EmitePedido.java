@@ -2,33 +2,49 @@ import javax.crypto.*;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.security.*;
+import java.security.cert.CertificateException;
+import java.security.cert.X509Certificate;
+import java.util.Objects;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
 public class EmitePedido {
     public String dados;
 
-    public EmitePedido(String dadosPedido) {
+    public EmitePedido(String dadosPedido) throws KeyStoreException, CertificateException, IOException, NoSuchAlgorithmException {
         this.dados = dadosPedido;
 
         try {
-            KeyPair keyPair = geracaoParChave();
             SecretKey secretKey = geracaoChaveSimetrica();
+            X509Certificate certificate = (X509Certificate) getKeyStore().getCertificate("CITIZEN SIGNATURE CERTIFICATE");
             byte[] dadosCifrados = cifragemDados(secretKey, dadosPedido.getBytes());
-            byte[] assinatura = assinaDados(dadosCifrados, keyPair.getPrivate());
-            KeyPair keyPair1 = geracaoParChave();
-            byte[] chaveCifrada = cifragemAssimetrica(secretKey.getEncoded(), keyPair1.getPublic());
-            emiteFicheiros(dadosCifrados, assinatura, keyPair.getPublic().getEncoded(), chaveCifrada, keyPair1.getPrivate().getEncoded());
+            byte[] assinatura = assinaDados(dadosCifrados, getKeyStore());
+            KeyPair keyPair = geracaoParChave();
+            byte[] chaveCifrada = cifragemAssimetrica(secretKey.getEncoded(), keyPair.getPublic());
+            emiteFicheiros(dadosCifrados, assinatura, certificate, chaveCifrada, keyPair.getPrivate().getEncoded());
         } catch (Exception e) {
             System.out.println("Erro: " + e);
         }
     }
 
-    private void emiteFicheiros(byte[] dadosCifrados, byte[] assinatura, byte[] certificado, byte[] chaveCifrada, byte[] chavePrivada){
+    private KeyStore getKeyStore(){
+        Provider provider = null;
+        for (Provider prov : Security.getProviders()) {if (prov.getName().equals("SunPKCS11-CartaoCidadao")) {provider = prov;break;}}
+
+        try {
+            KeyStore ks = KeyStore.getInstance("PKCS11", Objects.requireNonNull(provider));
+            ks.load(null, null);
+            return ks;
+        } catch (KeyStoreException | CertificateException | IOException | NoSuchAlgorithmException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    private void emiteFicheiros(byte[] dadosCifrados, byte[] assinatura, X509Certificate certificado, byte[] chaveCifrada, byte[] chavePrivada){
         try (ZipOutputStream zipOut = new ZipOutputStream(new FileOutputStream("PedidoLicensa.zip"))) {
             adicionarArquivoAoZip(zipOut, "pedidoLicenca", dadosCifrados);
             adicionarArquivoAoZip(zipOut, "assinatura", assinatura);
-            adicionarArquivoAoZip(zipOut, "certificado", certificado);
+            adicionarArquivoAoZip(zipOut, "certificado", certificado.getPublicKey().getEncoded());
             adicionarArquivoAoZip(zipOut, "chaveSimetrica", chaveCifrada);
             try (FileOutputStream fos = new FileOutputStream("chaveAssimetrica")) {fos.write(chavePrivada);}
         } catch (IOException e) {
@@ -80,16 +96,16 @@ public class EmitePedido {
         }
     }
 
-    private byte[] assinaDados(byte[] data, PrivateKey privateKey) {
+    private byte[] assinaDados(byte[] data, KeyStore ks) {
         try {
             Signature signature = Signature.getInstance("SHA256withRSA");
-            signature.initSign(privateKey);
+            signature.initSign((PrivateKey) ks.getKey("CITIZEN SIGNATURE CERTIFICATE", null));
             signature.update(data);
             return signature.sign();
         } catch (NoSuchAlgorithmException | InvalidKeyException | SignatureException e) {
             System.out.println("Erro: " + e);
             throw new RuntimeException(e);
-        }
+        } catch (UnrecoverableKeyException | KeyStoreException e) {throw new RuntimeException(e);}
     }
 
     private byte[] cifragemAssimetrica(byte[] data, PublicKey publicKey) {
@@ -103,29 +119,3 @@ public class EmitePedido {
         }
     }
 }
-
-/*
-private KeyStore carregaProvider() throws KeyStoreException, CertificateException, IOException, NoSuchAlgorithmException {
-        Provider provider = null;
-        for (Provider prov : Security.getProviders()) {if (prov.getName().equals("SunPKCS11-CartaoCidadao")) {provider = prov;break;}}
-
-        KeyStore ks = KeyStore.getInstance("PKCS11", Objects.requireNonNull(provider));
-        ks.load(null, null);
-
-        return ks;
-    }
-
-    public byte[] assinaturaDados(){
-        Signature signature = null;
-        try {
-            signature = Signature.getInstance("SHA256withRSA");
-            signature.initSign((PrivateKey) carregaProvider().getKey("CITIZEN SIGNATURE CERTIFICATE", null));
-            signature.update(this.dadosPedido.getBytes());
-            return signature.sign();
-        } catch (NoSuchAlgorithmException | UnrecoverableKeyException | KeyStoreException | SignatureException | InvalidKeyException | CertificateException | IOException e) {throw new RuntimeException(e);}
-    }
-
-    public X509Certificate obterCertificado() throws KeyStoreException, CertificateException, NoSuchAlgorithmException, IOException {
-        return (X509Certificate) carregaProvider().getCertificate("CITIZEN SIGNATURE CERTIFICATE");
-    }
- */

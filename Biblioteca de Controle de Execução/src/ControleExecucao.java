@@ -1,4 +1,8 @@
+import java.io.IOException;
+import java.security.KeyStoreException;
+import java.security.NoSuchAlgorithmException;
 import java.security.PublicKey;
+import java.security.cert.CertificateException;
 import java.util.Scanner;
 
 public class ControleExecucao {
@@ -55,7 +59,9 @@ public class ControleExecucao {
         int numIdCivil = scanner.nextInt();
 
         DadosLicensa dadosLicensa = new DadosLicensa(nome, email, numIdCivil, this.nomeApp, this.versao);
-        EmitePedido emitePedido = new EmitePedido(dadosLicensa.toJson());
+        try {
+            EmitePedido emitePedido = new EmitePedido(dadosLicensa.toJson());
+        } catch (KeyStoreException | CertificateException | IOException | NoSuchAlgorithmException e) {throw new RuntimeException(e);}
         return true;
     }
 
