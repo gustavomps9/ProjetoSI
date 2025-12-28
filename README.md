@@ -14,5 +14,3 @@ Reuel Queiroz
 IntelliJ IDEA
 
 Java
-
-Nota: Este projeto foi realizado para efeitos académicos (Unidade Curricular - Segurança Informática). A sua avaliação resultou na nota de 11 valores.
